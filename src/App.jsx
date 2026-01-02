@@ -14,7 +14,8 @@ import './App.css';
 
 function App() {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
-  const [activePanel, setActivePanel] = useState(null); 
+  const [activePanel, setActivePanel] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const panelData = {
     'docs': {
@@ -90,7 +91,7 @@ function App() {
       )
     },
     'checklist': {
-      title: '🎒 Генератор Списка',
+      title: '🎒 Онлайн чек-лист',
       position: 'right',
       content: <SmartChecklist />
     }
@@ -106,9 +107,45 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (activePanel) document.body.style.overflow = 'hidden';
+    if (activePanel || menuOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'auto';
-  }, [activePanel]);
+  }, [activePanel, menuOpen]);
+
+  // --- OBSERVER (Авто-наведение) ---
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-25% 0px -25% 0px', 
+      threshold: 0
+    };
+
+    const observerCallback = (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('hover-active');
+        } else {
+          entry.target.classList.remove('hover-active');
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    
+    const targets = [
+       ...document.querySelectorAll('.odo-item'),        
+       ...document.querySelectorAll('.news-card'),        
+       ...document.querySelectorAll('.gear-card'),        
+       ...document.querySelectorAll('.team-photo-wrap'),  
+       ...document.querySelectorAll('.glass-row-btn'),    
+       ...document.querySelectorAll('.vote-card'),        
+       ...document.querySelectorAll('.img-card-btn'), 
+       ...document.querySelectorAll('#amy .item-card') 
+    ];
+
+    targets.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -120,6 +157,10 @@ function App() {
 
   const closePanel = () => {
     setActivePanel(null);
+  };
+
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
   };
 
   const currentPanelData = activePanel ? panelData[activePanel] : null;
@@ -157,19 +198,29 @@ function App() {
 
       {/* ШАПКА */}
       <header className="header">
-        <div className="logo" onClick={scrollToTop}>ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ 🎥</div>
-        <nav className="nav">
-          <a href="#hero">Главная</a>
-          <a href="#destinations">Направления</a>
-          <a href="#roulette">Рулетка</a>
-          <a href="#news">Новости</a>
-          <a href="#team">Команда</a>
-          <a href="#amy">С собакой</a>
-          <a href="#contact">Контакты</a>
+        <div className="header-top-row">
+           <div className="logo" onClick={scrollToTop}>ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ 🎥</div>
+           <div className={`burger-icon ${menuOpen ? 'open' : ''}`} onClick={toggleMenu}>
+             <span></span><span></span><span></span>
+           </div>
+        </div>
+        
+        <div className="mobile-collab-wrapper">
+             <a href="https://t.me/gavrilenko_ira" target="_blank" rel="noopener noreferrer" className="header-collab-btn mobile-btn">Сотрудничество</a>
+        </div>
+
+        <nav className={`nav ${menuOpen ? 'active' : ''}`}>
+          <a href="#hero" onClick={() => setMenuOpen(false)}>Главная</a>
+          <a href="#destinations" onClick={() => setMenuOpen(false)}>Направления</a>
+          <a href="#roulette" onClick={() => setMenuOpen(false)}>Рулетка</a>
+          <a href="#news" onClick={() => setMenuOpen(false)}>Новости</a>
+          <a href="#team" onClick={() => setMenuOpen(false)}>Команда</a>
+          <a href="#amy" onClick={() => setMenuOpen(false)}>С собакой</a>
+          <a href="#contact" onClick={() => setMenuOpen(false)}>Контакты</a>
+          <a href="https://t.me/gavrilenko_ira" className="nav-collab-link" onClick={() => setMenuOpen(false)}>Сотрудничество</a>
         </nav>
         
-        {/* КНОПКА СОТРУДНИЧЕСТВО (ОРАНЖЕВАЯ) */}
-        <a href="https://t.me/gavrilenko_ira" target="_blank" rel="noopener noreferrer" className="header-collab-btn">
+        <a href="https://t.me/gavrilenko_ira" target="_blank" rel="noopener noreferrer" className="header-collab-btn desktop-btn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42l10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.002.001l-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15l4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z"/></svg>
           Сотрудничество
         </a>
@@ -187,7 +238,7 @@ function App() {
       </section>
 
       <section id="destinations" style={{ 
-          background: `url('/images/destinations-section-bg.jpg') no-repeat center center`,
+          background: `url('./images/destinations-section-bg.jpg') no-repeat center center`,
           backgroundSize: 'cover',
           backgroundAttachment: 'fixed',
           padding: '80px 20px'
@@ -203,9 +254,8 @@ function App() {
         </div>
       </section>
 
-      {/* РУЛЕТКА */}
       <section id="roulette" className="roulette-section" style={{ 
-        background: `url('/images/stats-bg.jpg') no-repeat center center`,
+        background: `url('./images/stats-bg.jpg') no-repeat center center`,
         backgroundSize: 'cover',
         backgroundAttachment: 'fixed',
         padding: '80px 20px',
@@ -214,7 +264,6 @@ function App() {
         <TravelRoulette />
       </section>
 
-      {/* ВИДЖЕТЫ БРОНИРОВАНИЯ */}
       <section className="textured-bg" style={{ 
         padding: '80px 20px',
         borderTop: '1px solid rgba(255,255,255,0.1)'
@@ -222,23 +271,23 @@ function App() {
          <TravelWidgets />
       </section>
 
-      {/* СТАТИСТИКА */}
       <section style={{ 
-        background: `url('/images/stats-bg.jpg') no-repeat center center`,
-        backgroundSize: 'cover',
-        backgroundAttachment: 'fixed',
+        backgroundImage: `url('./images/vote-bg.jpg')`, 
+        backgroundRepeat: 'no-repeat', 
+        backgroundPosition: 'center center', 
+        backgroundSize: 'cover', 
+        backgroundAttachment: 'fixed', 
         padding: '60px 0',
-        borderTop: '1px solid #333' 
+        borderTop: '1px solid #333',
+        width: '100%' 
       }}>
         <Odometer />
       </section>
 
-      {/* КОМАНДА */}
       <section id="team" className="textured-bg" style={{ padding: '100px 20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
         <TeamBlock />
       </section>
 
-      {/* СОЦСЕТИ - ИСПРАВЛЕННЫЕ ИКОНКИ */}
       <section id="social-hub" className="textured-bg" style={{ padding: '100px 20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
         <div className="content-wrap wide-wrap">
           <h2 style={{ color: 'white', marginBottom: '10px', fontSize: '2.5rem' }}>🌐 Где нас найти</h2>
@@ -251,9 +300,11 @@ function App() {
                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4.5L19 12L5 19.5V4.5Z" /></svg><span>RuTube</span>
                 </a>
                 
-                {/* VK: УЗНАВАЕМАЯ ИКОНКА */}
+                {/* ВК - ОБНОВЛЕННАЯ ОФИЦИАЛЬНАЯ ИКОНКА */}
                 <a href="https://vk.com/travel_in_lens" target="_blank" rel="noopener noreferrer" className="glass-row-btn">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M15.07 2H8.93C5.1 2 2 5.1 2 8.93v6.14C2 18.9 5.1 22 8.93 22h6.14c3.83 0 6.93-3.1 6.93-6.93V8.93C22 5.1 18.9 2 15.07 2zm-1.29 16.2h-1.66c-3.6 0-5.71-2.46-5.83-6.55h1.77c.08 3 1.38 3.56 1.41 1.05h1.66v2.1c.96-.11 2.03-1.15 2.4-3.15h1.68c-.62 3.65-3.3 5.44-3.3 6.1v.45z"/></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.92 5.35c.14-.46.05-.79-.65-.79h-2.15c-.55 0-.8.29-.94.61 0 0-1.1 2.64-2.66 4.36-.51.51-.74.67-1.01.67-.14 0-.34-.16-.34-.61V5.35c0-.55-.16-.79-.62-.79h-3.4c-.34 0-.55.25-.55.53 0 .56.84.69.93 2.27V10c0 .75-.13.89-.42.89-.77 0-2.64-2.79-3.75-5.97C4.19 4.37 3.97 4.15 3.4 4.15H1.25c-.62 0-.75.29-.75.61 0 .57.73 3.42 3.4 8.16 2.37 4.33 5.7 6.67 8.71 6.67 1.81 0 2.03-.41 2.03-1.11v-2.57c0-.77.16-.88.7-.88.4 0 1.08.2 2.67 1.73 1.81 1.81 2.11 2.83 3.13 2.83h2.15c.62 0 .93-.31.75-.92-.2-.59-.87-1.45-1.77-2.47-.49-.58-1.21-1.21-1.43-1.52-.31-.4-.22-.58 0-.94 0 0 2.52-3.55 2.78-4.75z"/>
+                  </svg>
                   <span>ВКонтакте</span>
                 </a>
                 
@@ -273,11 +324,15 @@ function App() {
             <div className="social-col">
               <h3>Онлайн</h3>
               <div className="social-stack">
-                {/* INSTAGRAM: УЗНАВАЕМАЯ ИКОНКА (КВАДРАТИК) */}
+                
+                {/* INSTAGRAM - ОБНОВЛЕННАЯ ОФИЦИАЛЬНАЯ ИКОНКА */}
                 <a href="https://instagram.com/travel_in_lens" target="_blank" rel="noopener noreferrer" className="glass-row-btn">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22H7.75A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5a4.25 4.25 0 0 0 4.25 4.25h8.5a4.25 4.25 0 0 0 4.25-4.25v-8.5a4.25 4.25 0 0 0-4.25-4.25h-8.5zm8.5 2.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5zm-4.25 2a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 1.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                  </svg>
                   <span>Instagram</span>
                 </a>
+                
                 <a href="https://t.me/travel_in_lens" target="_blank" rel="noopener noreferrer" className="glass-row-btn">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42l10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.002.001l-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15l4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z"/></svg><span>Telegram</span>
                 </a>
@@ -287,7 +342,6 @@ function App() {
         </div>
       </section>
 
-      {/* НОВОСТИ */}
       <section id="news" className="tech-cross-bg" style={{ padding: '80px 20px' }}>
         <NewsFeed />
       </section>
@@ -300,7 +354,7 @@ function App() {
           <div className="items-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
              <div className="item-card" onClick={() => openPanel('docs')} style={{cursor: 'pointer'}}>
                 <div className="item-img-wrap" style={{ borderRadius: '40% 60% 70% 30% / 50% 60% 30% 60%', height: '220px', boxShadow: '0 15px 35px rgba(0,0,0,0.3)' }}>
-                  <img src="/images/amy-docs.jpg" alt="Документы" />
+                  <img src="./images/amy-docs.jpg" alt="Документы" />
                 </div>
                 <div className="item-info">
                   <h4 style={{color: 'white', marginTop: '15px', fontSize: '1.2rem'}}>📜 Документы</h4>
@@ -309,7 +363,7 @@ function App() {
              </div>
              <div className="item-card" onClick={() => openPanel('meds')} style={{cursor: 'pointer'}}>
                 <div className="item-img-wrap" style={{ borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', height: '220px', boxShadow: '0 15px 35px rgba(0,0,0,0.3)' }}>
-                  <img src="/images/amy-meds.jpg" alt="Аптечка" />
+                  <img src="./images/amy-meds.jpg" alt="Аптечка" />
                 </div>
                 <div className="item-info">
                   <h4 style={{color: 'white', marginTop: '15px', fontSize: '1.2rem'}}>💊 Аптечка</h4>
@@ -318,7 +372,7 @@ function App() {
              </div>
              <div className="item-card" onClick={() => openPanel('hotel')} style={{cursor: 'pointer'}}>
                 <div className="item-img-wrap" style={{ borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', height: '220px', boxShadow: '0 15px 35px rgba(0,0,0,0.3)' }}>
-                  <img src="/images/amy-hotel.jpg" alt="Отели" />
+                  <img src="./images/amy-hotel.jpg" alt="Отели" />
                 </div>
                 <div className="item-info">
                   <h4 style={{color: 'white', marginTop: '15px', fontSize: '1.2rem'}}>🏨 Dog-friendly</h4>
@@ -330,7 +384,7 @@ function App() {
       </section>
 
       <section id="tips" className="info-section" style={{
-          background: `url('/images/tips-section-bg.jpg') no-repeat center center`,
+          background: `url('./images/tips-section-bg.jpg') no-repeat center center`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed',
@@ -340,14 +394,17 @@ function App() {
           <p className="subtitle" style={{color: '#555'}}>Экономия и еда</p>
           
           <div className="placeholder-grid">
-             <div className="img-card-btn" style={{ backgroundImage: "url('/images/tips-money.jpg')" }} onClick={() => openPanel('money')}>
+             <div className="img-card-btn" style={{ backgroundImage: "url('./images/tips-money.jpg')" }} onClick={() => openPanel('money')}>
                 <div className="img-card-overlay">💰 Экономия</div>
              </div>
-             <div className="img-card-btn" style={{ backgroundImage: "url('/images/tips-food.jpg')" }} onClick={() => openPanel('food')}>
+             <div className="img-card-btn" style={{ backgroundImage: "url('./images/tips-food.jpg')" }} onClick={() => openPanel('food')}>
                 <div className="img-card-overlay">🍔 Гастро-туры</div>
              </div>
-             <div className="img-card-btn" style={{ backgroundImage: "url('/images/tips-check.jpg')" }} onClick={() => openPanel('checklist')}>
-                <div className="img-card-overlay">🎒 Чек-лист</div>
+             <div className="img-card-btn" style={{ backgroundImage: "url('./images/tips-check.jpg')" }} onClick={() => openPanel('checklist')}>
+                <div className="img-card-overlay" style={{flexDirection: 'column'}}>
+                  <span>🎒 Онлайн чек-лист</span>
+                  <span style={{fontSize: '0.9rem', marginTop: '10px', fontWeight: '600', textTransform: 'none'}}>(попробуй, тебе понравится)</span>
+                </div>
              </div>
           </div>
         </div>
@@ -362,7 +419,7 @@ function App() {
       </section>
 
       <section style={{ 
-        background: `url('/images/vote-bg.jpg') no-repeat center center`,
+        background: `url('./images/vote-bg.jpg') no-repeat center center`,
         backgroundSize: 'cover',
         backgroundAttachment: 'fixed',
         padding: '80px 20px',
@@ -374,7 +431,7 @@ function App() {
       <section id="contact" className="contact-section green-bg textured-bg" style={{ padding: '100px 20px' }}>
         <h2>Сотрудничество</h2>
         <p>Есть предложение? Напишите нам!</p>
-        <a href="https://t.me/gavrilenko_ira" target="_blank" rel="noopener noreferrer" className="btn-action" style={{marginTop: '20px', display: 'inline-flex', alignItems: 'center', gap: '10px'}}>
+        <a href="https://t.me/gavrilenko_ira" target="_blank" rel="noopener noreferrer" className="btn-action" style={{marginTop: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42l10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.002.001l-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15l4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z"/></svg> Telegram
         </a>
       </section>

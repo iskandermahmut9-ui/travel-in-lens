@@ -7,29 +7,29 @@ const TeamBlock = () => {
       name: "Ира",
       role: "Голос и Душа",
       desc: "Придумывает маршруты и красиво говорит в кадре",
-      img1: "/images/team-ira-1.jpg", 
-      img2: "/images/team-ira-2.jpg"  
+      img1: "./images/team-ira-1.jpg", 
+      img2: "./images/team-ira-2.jpg"  
     },
     {
       name: "Саша",
       role: "Глаз и Монтаж",
       desc: "Видит мир через объектив и не спит ночами",
-      img1: "/images/team-alex-1.jpg",
-      img2: "/images/team-alex-2.jpg"
+      img1: "./images/team-alex-1.jpg",
+      img2: "./images/team-alex-2.jpg"
     },
     {
       name: "Дима",
       role: "Тексты и Дегустация",
       desc: "Главный критик всего, знайте кому нужно угодить",
-      img1: "/images/team-dima-1.jpg",
-      img2: "/images/team-dima-2.jpg"
+      img1: "./images/team-dima-1.jpg",
+      img2: "./images/team-dima-2.jpg"
     },
     {
       name: "Эми",
       role: "Главный пассажир",
       desc: "Контроль качества сосисок и обнимашек",
-      img1: "/images/team-amy-1.jpg",
-      img2: "/images/team-amy-2.jpg"
+      img1: "./images/team-amy-1.jpg",
+      img2: "./images/team-amy-2.jpg"
     }
   ];
 

@@ -3,7 +3,7 @@ import { myTrips } from './tripsData';
 import './App.css';
 
 function Destinations() {
-  const [activeTab, setActiveTab] = useState('russia'); 
+  const [activeTab, setActiveTab] = useState('moscow'); 
 
   // Формы "клякс"
   const blobShapes = [

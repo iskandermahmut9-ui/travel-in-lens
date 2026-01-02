@@ -69,7 +69,7 @@ const VoteBlock = () => {
         {/* КАРТОЧКА 1 */}
         <div 
           className={`vote-card ${userVoted === 'opt1' ? 'voted' : ''}`} 
-          style={{ backgroundImage: "url('/images/vote-1.jpg')" }} 
+          style={{ backgroundImage: "url('./images/vote-1.jpg')" }} 
           onClick={() => handleVote('opt1')}
         >
           <div className="vote-dimmer"></div>
@@ -100,7 +100,7 @@ const VoteBlock = () => {
         {/* КАРТОЧКА 2 */}
         <div 
           className={`vote-card ${userVoted === 'opt2' ? 'voted' : ''}`} 
-          style={{ backgroundImage: "url('/images/vote-2.jpg')" }} 
+          style={{ backgroundImage: "url('./images/vote-2.jpg')" }} 
           onClick={() => handleVote('opt2')}
         >
           <div className="vote-dimmer"></div>
