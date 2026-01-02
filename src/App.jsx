@@ -111,11 +111,12 @@ function App() {
     else document.body.style.overflow = 'auto';
   }, [activePanel, menuOpen]);
 
-  // --- OBSERVER (Авто-наведение) ---
+  // --- ИСПРАВЛЕННАЯ ЗОНА РЕАКЦИИ (20% В ЦЕНТРЕ) ---
   useEffect(() => {
     const observerOptions = {
       root: null,
-      rootMargin: '-25% 0px -25% 0px', 
+      // 40% сверху и 40% снизу - мертвая зона. Остается 20% в центре.
+      rootMargin: '-40% 0px -40% 0px', 
       threshold: 0
     };
 
@@ -300,7 +301,6 @@ function App() {
                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4.5L19 12L5 19.5V4.5Z" /></svg><span>RuTube</span>
                 </a>
                 
-                {/* ВК - ОБНОВЛЕННАЯ ОФИЦИАЛЬНАЯ ИКОНКА */}
                 <a href="https://vk.com/travel_in_lens" target="_blank" rel="noopener noreferrer" className="glass-row-btn">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19.92 5.35c.14-.46.05-.79-.65-.79h-2.15c-.55 0-.8.29-.94.61 0 0-1.1 2.64-2.66 4.36-.51.51-.74.67-1.01.67-.14 0-.34-.16-.34-.61V5.35c0-.55-.16-.79-.62-.79h-3.4c-.34 0-.55.25-.55.53 0 .56.84.69.93 2.27V10c0 .75-.13.89-.42.89-.77 0-2.64-2.79-3.75-5.97C4.19 4.37 3.97 4.15 3.4 4.15H1.25c-.62 0-.75.29-.75.61 0 .57.73 3.42 3.4 8.16 2.37 4.33 5.7 6.67 8.71 6.67 1.81 0 2.03-.41 2.03-1.11v-2.57c0-.77.16-.88.7-.88.4 0 1.08.2 2.67 1.73 1.81 1.81 2.11 2.83 3.13 2.83h2.15c.62 0 .93-.31.75-.92-.2-.59-.87-1.45-1.77-2.47-.49-.58-1.21-1.21-1.43-1.52-.31-.4-.22-.58 0-.94 0 0 2.52-3.55 2.78-4.75z"/>
@@ -325,7 +325,6 @@ function App() {
               <h3>Онлайн</h3>
               <div className="social-stack">
                 
-                {/* INSTAGRAM - ОБНОВЛЕННАЯ ОФИЦИАЛЬНАЯ ИКОНКА */}
                 <a href="https://instagram.com/travel_in_lens" target="_blank" rel="noopener noreferrer" className="glass-row-btn">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22H7.75A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5a4.25 4.25 0 0 0 4.25 4.25h8.5a4.25 4.25 0 0 0 4.25-4.25v-8.5a4.25 4.25 0 0 0-4.25-4.25h-8.5zm8.5 2.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5zm-4.25 2a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 1.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
