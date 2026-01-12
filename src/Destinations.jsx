@@ -46,7 +46,7 @@ function Destinations() {
 
       {/* Табы */}
       <div className="tabs-row">
-        <button className={`tab-btn ${activeTab === 'moscow' ? 'active' : ''}`} onClick={() => setActiveTab('moscow')}>🕌 МОСКВА</button>
+        <button className={`tab-btn ${activeTab === 'moscow' ? 'active' : ''}`} onClick={() => setActiveTab('moscow')}>🪆 МОСКВА</button>
         <button className={`tab-btn ${activeTab === 'russia' ? 'active' : ''}`} onClick={() => setActiveTab('russia')}>🇷🇺 РОССИЯ</button>
         <button className={`tab-btn ${activeTab === 'asia' ? 'active' : ''}`} onClick={() => setActiveTab('asia')}>🌏 АЗИЯ</button>
         <button className={`tab-btn ${activeTab === 'europe' ? 'active' : ''}`} onClick={() => setActiveTab('europe')}>🏰 ЕВРОПА</button>
