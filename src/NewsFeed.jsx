@@ -6,42 +6,66 @@ const NewsFeed = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // Функция загрузки новостей
+  // Список источников (самые активные)
+  const feeds = [
+    'https://lenta.ru/rss/articles/travel',           // Лента
+    'https://ria.ru/export/rss2/tourism/index.xml',   // РИА Новости (очень активный)
+    'https://www.atorus.ru/rss/news',                 // АТОР (Вестник туроператоров)
+    'https://tourism.interfax.ru/rss.xml'             // Интерфакс Туризм (запасной)
+  ];
+
+  // Твой ключ от rss2json (если он перестанет работать, можно создать новый бесплатно на rss2json.com)
+  const API_KEY = 'kq9b3524y6w7x8254553255'; 
+
   const fetchNews = async () => {
     setLoading(true);
     setError(false);
-
-    // 1. Рамблер Путешествия (Самые активные в праздники)
-    const feed1 = 'https://travel.rambler.ru/rss/';
-    // 2. Лента.ру Путешествия
-    const feed2 = 'https://lenta.ru/rss/articles/travel';
-    // 3. АТОР (Официальные, но в праздники молчат)
-    const feed3 = 'https://www.atorus.ru/rss/news';
-
-    // Трюк против кеширования: добавляем случайное число к запросу
-    const timeBuster = Date.now(); 
-
+    
+    // Число чтобы избежать кеша браузера
+    const timeBuster = Date.now();
+    
     try {
-      // Пробуем Рамблер
-      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed1)}&api_key=kq9b3524y6w7x8254553255&t=${timeBuster}`);
-      const data = await res.json();
+      // Запускаем скачивание со всех источников ОДНОВРЕМЕННО
+      const requests = feeds.map(feed => 
+        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}&api_key=${API_KEY}&count=5&t=${timeBuster}`)
+        .then(res => res.json())
+        .catch(err => null) // Если один источник упал, не ломаем остальные
+      );
 
-      if (data.status === 'ok' && data.items.length > 0) {
-        setNews(data.items.slice(0, 6)); // Берем 6 свежих
-      } else {
-        throw new Error("Rambler empty");
+      const results = await Promise.all(requests);
+      
+      let allNews = [];
+
+      // Собираем всё в одну кучу
+      results.forEach(data => {
+        if (data && data.status === 'ok' && data.items) {
+          allNews = [...allNews, ...data.items];
+        }
+      });
+
+      if (allNews.length === 0) {
+        throw new Error("No news found");
       }
+
+      // Сортируем по дате (сначала новые)
+      allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+      // Убираем дубликаты (иногда бывают одинаковые новости) и берем 6 штук
+      const uniqueNews = [];
+      const titles = new Set();
+      
+      for (const item of allNews) {
+        if (!titles.has(item.title) && uniqueNews.length < 6) {
+          titles.add(item.title);
+          uniqueNews.push(item);
+        }
+      }
+
+      setNews(uniqueNews);
+
     } catch (err) {
-      console.log("Рамблер спит, будим Ленту...");
-      try {
-        // Пробуем Ленту
-        const res2 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed2)}&t=${timeBuster}`);
-        const data2 = await res2.json();
-        setNews(data2.items.slice(0, 6));
-      } catch (e) {
-        console.log("Все спят :(");
-        setError(true);
-      }
+      console.error("Ошибка загрузки новостей:", err);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -53,6 +77,9 @@ const NewsFeed = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
+    // Проверка на некорректную дату (на всякий случай)
+    if (isNaN(date)) return dateString; 
+    
     return date.toLocaleDateString('ru-RU', {
       day: 'numeric',
       month: 'long',
@@ -61,14 +88,19 @@ const NewsFeed = () => {
     });
   };
 
-  // Функция для поиска картинки в RSS (они вечно прячут их в разных местах)
   const getImage = (item) => {
+    // 1. Ищем в стандартном поле enclosure
     if (item.enclosure?.link) return item.enclosure.link;
     if (item.thumbnail) return item.thumbnail;
-    // Ищем в описании
+    
+    // 2. РИА Новости часто кладет картинку в description, но без тега img src, а просто ссылкой? 
+    // Обычно rss2json вытаскивает её в enclosure.
+    
+    // 3. Пытаемся найти src внутри description (HTML)
     const imgMatch = item.description?.match(/src="([^"]+)"/);
     if (imgMatch) return imgMatch[1];
-    return '/images/hero-bg.jpg'; // Заглушка
+
+    return '/images/hero-bg.jpg'; // Заглушка если совсем ничего нет
   };
 
   return (
@@ -87,11 +119,11 @@ const NewsFeed = () => {
         </button>
       </div>
       
-      {loading && <div style={{ textAlign: 'center', color: '#666' }}>Загружаем свежие сплетни...</div>}
+      {loading && <div style={{ textAlign: 'center', color: '#666' }}>Собираем свежие новости по всему миру...</div>}
       
       {!loading && error && (
         <div style={{ textAlign: 'center', color: '#666' }}>
-          Источники отдыхают. Попробуйте позже. 🎄
+          Новости пока недоступны. Возможно, лимит запросов исчерпан. 😔
         </div>
       )}
 
