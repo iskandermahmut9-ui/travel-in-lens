@@ -106,7 +106,7 @@ const NewsFeed = () => {
   return (
     <div className="news-container">
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginBottom: '40px' }}>
-        <h2 className="section-title" style={{ marginBottom: 0 }}>НОВОСТИ ТУРИЗМА</h2>
+        <h2 className="section-title" style={{ marginBottom: 0 }}>НОВОСТИ ТУРИЗМА (TEST)</h2>
         <button 
           onClick={fetchNews} 
           style={{
