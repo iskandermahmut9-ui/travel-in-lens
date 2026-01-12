@@ -15,7 +15,7 @@ const NewsFeed = () => {
   ];
 
   // Твой ключ от rss2json (если он перестанет работать, можно создать новый бесплатно на rss2json.com)
-  const API_KEY = 'kq9b3524y6w7x8254553255'; 
+  const API_KEY = 'ek92e7bakejfim7qlsm5peoyhobxtziyycp2clhj'; 
 
   const fetchNews = async () => {
     setLoading(true);
@@ -106,7 +106,7 @@ const NewsFeed = () => {
   return (
     <div className="news-container">
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginBottom: '40px' }}>
-        <h2 className="section-title" style={{ marginBottom: 0 }}>НОВОСТИ ТУРИЗМА (TEST)</h2>
+        <h2 className="section-title" style={{ marginBottom: 0 }}>НОВОСТИ ТУРИЗМА</h2>
         <button 
           onClick={fetchNews} 
           style={{
