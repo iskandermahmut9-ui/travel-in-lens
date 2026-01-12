@@ -6,12 +6,12 @@ const NewsFeed = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // Список источников (самые активные)
+ // Список источников (новые, более надежные)
   const feeds = [
-    'https://lenta.ru/rss/articles/travel',           // Лента
-    'https://ria.ru/export/rss2/tourism/index.xml',   // РИА Новости (очень активный)
-    'https://www.atorus.ru/rss/news',                 // АТОР (Вестник туроператоров)
-    'https://tourism.interfax.ru/rss.xml'             // Интерфакс Туризм (запасной)
+    'https://lenta.ru/rss/articles/travel',                   // Лента
+    'https://www.gazeta.ru/export/rss/lifestyle/travel.xml',  // Газета.ру
+    'https://rss.aif.ru/travel.php',                          // Аргументы и Факты
+    'https://travel.rambler.ru/rss/'                          // Рамблер
   ];
 
   // Твой ключ от rss2json (если он перестанет работать, можно создать новый бесплатно на rss2json.com)
@@ -27,7 +27,7 @@ const NewsFeed = () => {
     try {
       // Запускаем скачивание со всех источников ОДНОВРЕМЕННО
       const requests = feeds.map(feed => 
-        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}&api_key=${API_KEY}&count=5&t=${timeBuster}`)
+      fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}&api_key=${API_KEY}&count=10&t=${timeBuster}`)
         .then(res => res.json())
         .catch(err => null) // Если один источник упал, не ломаем остальные
       );
