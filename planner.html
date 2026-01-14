@@ -25,12 +25,11 @@
     <div class="header-center"></div>
     <div class="header-right">
         <div id="user-panel" class="user-panel">
-            <button class="tool-btn" id="btn-routes" title="Мои маршруты"><i class="fa-solid fa-folder-open"></i></button>
             <button class="tool-btn" id="btn-mobile-settings" title="Настройки"><i class="fa-solid fa-gear"></i></button>
+            
+            <button class="tool-btn" id="btn-routes" title="Мои маршруты"><i class="fa-solid fa-folder-open"></i></button>
             <button class="tool-btn" id="btn-save-modal" title="Сохранить"><i class="fa-solid fa-cloud-arrow-up"></i></button>
-            
             <button class="tool-btn" id="btn-share-img" title="Отправить"><i class="fa-solid fa-share-nodes"></i></button>
-            
             <button class="tool-btn" id="btn-export" title="Скачать PDF"><i class="fa-solid fa-file-pdf"></i></button>
             <button class="tool-btn" id="btn-logout" title="Выход"><i class="fa-solid fa-sign-out"></i></button>
         </div>
@@ -48,7 +47,6 @@
 <div class="main-container">
     <div class="sidebar">
         <div class="settings-col" id="settings-panel">
-            <button class="settings-close-btn" id="btn-close-settings">Закрыть настройки</button>
             <div>
                 <h3>Автомобиль</h3>
                 <div class="input-group"><label>РАСХОД (Л/100КМ)</label><input type="number" id="g-consumption" value="10"></div>
@@ -62,6 +60,7 @@
                 <div class="input-group"><label>ЭКСКУРСИЯ (ЧЕЛ)</label><input type="number" id="g-excursions" value="1000"></div>
                 <div class="input-group"><label>СУВЕНИРЫ (ВСЕГО)</label><input type="number" id="g-souvenirs" value="2000"></div>
             </div>
+            <button class="settings-apply-btn" id="btn-apply-settings">ПРИМЕНИТЬ</button>
         </div>
 
         <div class="route-col">

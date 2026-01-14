@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: v10.0 (Share & Fixes)");
+    console.log("Planner JS: v11.0 (Fix Layout & Apply Btn)");
 
     let map = null;
     let supabase = null;
@@ -57,43 +57,32 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
     bind('btn-export', generatePDF); 
-    
-    // Кнопка ПОДЕЛИТЬСЯ
     bind('btn-share-img', shareImage); 
-    
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
-    // НАСТРОЙКИ: Открытие и закрытие
-    bind('btn-mobile-settings', () => { 
-        document.getElementById('settings-panel').classList.add('active'); 
-    });
-    bind('btn-close-settings', () => { 
-        document.getElementById('settings-panel').classList.remove('active'); 
-    });
+    // НАСТРОЙКИ
+    bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
+    
+    // КНОПКА ПРИМЕНИТЬ (она же закрыть)
+    bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
 
-    // ПЕРЕКЛЮЧЕНИЕ ВИДА (FAB)
+    // FAB
     bind('fab-toggle-view', () => {
         document.body.classList.toggle('show-map');
         const fabIcon = document.querySelector('#fab-toggle-view i');
-        
         if (document.body.classList.contains('show-map')) {
-            fabIcon.classList.remove('fa-map');
-            fabIcon.classList.add('fa-list');
+            fabIcon.classList.remove('fa-map'); fabIcon.classList.add('fa-list');
             setTimeout(() => map.invalidateSize(), 100);
         } else {
-            fabIcon.classList.remove('fa-list');
-            fabIcon.classList.add('fa-map');
+            fabIcon.classList.remove('fa-list'); fabIcon.classList.add('fa-map');
         }
     });
 
     const searchInp = document.getElementById('city-search');
     if(searchInp) {
         let timer;
-        searchInp.addEventListener('input', () => {
-            clearTimeout(timer);
-            timer = setTimeout(() => addBySearch(), 1500); 
-        });
+        searchInp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => addBySearch(), 1500); });
         searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
     }
 
@@ -500,12 +489,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             reportDiv.innerHTML = tableHTML;
             document.body.appendChild(reportDiv);
             
-            // Генерируем Blob
             const finalCanvas = await html2canvas(reportDiv, { scale: 2, backgroundColor: '#ffffff' });
             finalCanvas.toBlob(async (blob) => {
                 const file = new File([blob], "Travel-Route.jpg", { type: "image/jpeg" });
 
-                // Пытаемся вызвать нативное окно "Поделиться"
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
@@ -517,7 +504,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                         console.log('Share canceled', err);
                     }
                 } else {
-                    // Если не поддерживается (ПК) - просто скачиваем
                     const link = document.createElement('a');
                     link.download = 'Travel-Route.jpg';
                     link.href = finalCanvas.toDataURL('image/jpeg', 0.9);
