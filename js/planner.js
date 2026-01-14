@@ -1,17 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: Started v7.0 (Telegram Ready)");
-
-    // --- TELEGRAM INIT ---
-    let tg = window.Telegram.WebApp;
-    if (tg) {
-        tg.expand(); // Растянуть на весь экран
-        document.body.classList.add('telegram-app'); // Включить тему телеграма
-        
-        // Настройка главной кнопки (пример использования)
-        // tg.MainButton.setText("СОХРАНИТЬ PDF");
-        // tg.MainButton.show();
-        // tg.MainButton.onClick(generatePDF);
-    }
+    console.log("Planner JS: v8.0 (Mobile Polish)");
 
     let map = null;
     let supabase = null;
@@ -73,12 +61,30 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
+    // --- НОВОЕ: Мобильные настройки ---
+    bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
+    bind('btn-close-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
+
+    // --- НОВОЕ: Скрыть/Показать карту ---
+    bind('btn-toggle-map', () => {
+        const m = document.getElementById('map');
+        const b = document.getElementById('btn-toggle-map');
+        m.classList.toggle('map-hidden');
+        if(m.classList.contains('map-hidden')) {
+            b.innerText = "ПОКАЗАТЬ КАРТУ";
+        } else {
+            b.innerText = "СКРЫТЬ КАРТУ";
+            setTimeout(() => map.invalidateSize(), 300); // Чтобы карта перерисовалась
+        }
+    });
+
+    // ПОИСК: Задержка увеличена до 1500мс
     const searchInp = document.getElementById('city-search');
     if(searchInp) {
         let timer;
         searchInp.addEventListener('input', () => {
             clearTimeout(timer);
-            timer = setTimeout(() => addBySearch(), 800);
+            timer = setTimeout(() => addBySearch(), 1500);
         });
         searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
     }
@@ -413,7 +419,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 foot: [footer],
                 startY: margin + imgH + 10,
                 theme: 'grid',
-                // ЧЕРНЫЙ ШРИФТ (textColor: 0) и КРУПНЕЕ (fontSize: 10)
                 styles: { font: 'Roboto', fontSize: 10, halign: 'center', cellPadding: 2, textColor: 0, lineColor: 200, lineWidth: 0.1 },
                 headStyles: { fillColor: [255, 87, 34], textColor: 255, fontStyle: 'bold' },
                 footStyles: { fillColor: [40, 40, 40], textColor: 255, fontStyle: 'bold' },
