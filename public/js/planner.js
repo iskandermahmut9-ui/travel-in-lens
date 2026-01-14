@@ -1,17 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: Started v7.0 (Telegram Ready)");
-
-    // --- TELEGRAM INIT ---
-    let tg = window.Telegram.WebApp;
-    if (tg) {
-        tg.expand(); // Растянуть на весь экран
-        document.body.classList.add('telegram-app'); // Включить тему телеграма
-        
-        // Настройка главной кнопки (пример использования)
-        // tg.MainButton.setText("СОХРАНИТЬ PDF");
-        // tg.MainButton.show();
-        // tg.MainButton.onClick(generatePDF);
-    }
+    console.log("Planner JS: v10.0 (Share & Fixes)");
 
     let map = null;
     let supabase = null;
@@ -69,16 +57,42 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
     bind('btn-export', generatePDF); 
-    bind('btn-download-img', generateFullImage); 
+    
+    // Кнопка ПОДЕЛИТЬСЯ
+    bind('btn-share-img', shareImage); 
+    
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
+    // НАСТРОЙКИ: Открытие и закрытие
+    bind('btn-mobile-settings', () => { 
+        document.getElementById('settings-panel').classList.add('active'); 
+    });
+    bind('btn-close-settings', () => { 
+        document.getElementById('settings-panel').classList.remove('active'); 
+    });
+
+    // ПЕРЕКЛЮЧЕНИЕ ВИДА (FAB)
+    bind('fab-toggle-view', () => {
+        document.body.classList.toggle('show-map');
+        const fabIcon = document.querySelector('#fab-toggle-view i');
+        
+        if (document.body.classList.contains('show-map')) {
+            fabIcon.classList.remove('fa-map');
+            fabIcon.classList.add('fa-list');
+            setTimeout(() => map.invalidateSize(), 100);
+        } else {
+            fabIcon.classList.remove('fa-list');
+            fabIcon.classList.add('fa-map');
+        }
+    });
+
     const searchInp = document.getElementById('city-search');
     if(searchInp) {
         let timer;
         searchInp.addEventListener('input', () => {
             clearTimeout(timer);
-            timer = setTimeout(() => addBySearch(), 800);
+            timer = setTimeout(() => addBySearch(), 1500); 
         });
         searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
     }
@@ -382,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // --- 1. ГЕНЕРАЦИЯ PDF (Черный шрифт) ---
+    // --- 1. PDF ---
     async function generatePDF() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
         const btn = document.getElementById('btn-export');
@@ -413,7 +427,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 foot: [footer],
                 startY: margin + imgH + 10,
                 theme: 'grid',
-                // ЧЕРНЫЙ ШРИФТ (textColor: 0) и КРУПНЕЕ (fontSize: 10)
                 styles: { font: 'Roboto', fontSize: 10, halign: 'center', cellPadding: 2, textColor: 0, lineColor: 200, lineWidth: 0.1 },
                 headStyles: { fillColor: [255, 87, 34], textColor: 255, fontStyle: 'bold' },
                 footStyles: { fillColor: [40, 40, 40], textColor: 255, fontStyle: 'bold' },
@@ -422,7 +435,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
 
             const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(12); doc.setTextColor(0); doc.setFont('Roboto'); // Черный текст итога
+            doc.setFontSize(12); doc.setTextColor(0); doc.setFont('Roboto');
             doc.text(`Бюджет: ${grandTotal.toLocaleString()} RUB`, pageW - margin, finalY, { align: 'right' });
             
             doc.save('Travel-Route.pdf');
@@ -430,10 +443,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         finally { btn.innerHTML = oldT; }
     }
 
-    // --- 2. ГЕНЕРАЦИЯ JPG (Черный шрифт) ---
-    async function generateFullImage() {
+    // --- 2. ПОДЕЛИТЬСЯ (JPG) ---
+    async function shareImage() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
-        const btn = document.getElementById('btn-download-img');
+        const btn = document.getElementById('btn-share-img');
         const oldT = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
@@ -448,7 +461,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             reportDiv.style.background = 'white'; reportDiv.style.position = 'absolute';
             reportDiv.style.top = '-9999px'; reportDiv.style.fontFamily = 'Montserrat, sans-serif';
 
-            // ТУТ ТОЖЕ ДЕЛАЕМ ЧЕРНЫЙ ШРИФТ
             let tableHTML = `
                 <h2 style="margin:0 0 10px; color:#000;">${name}</h2>
                 <img src="${mapCanvas.toDataURL('image/png')}" style="width:100%; border-radius:8px; margin-bottom:20px;">
@@ -487,10 +499,32 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             reportDiv.innerHTML = tableHTML;
             document.body.appendChild(reportDiv);
+            
+            // Генерируем Blob
             const finalCanvas = await html2canvas(reportDiv, { scale: 2, backgroundColor: '#ffffff' });
-            const link = document.createElement('a');
-            link.download = 'Travel-Report.jpg'; link.href = finalCanvas.toDataURL('image/jpeg', 0.9); link.click();
-            document.body.removeChild(reportDiv);
+            finalCanvas.toBlob(async (blob) => {
+                const file = new File([blob], "Travel-Route.jpg", { type: "image/jpeg" });
+
+                // Пытаемся вызвать нативное окно "Поделиться"
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Мой маршрут',
+                            text: 'Смотри, какой маршрут я составил!'
+                        });
+                    } catch (err) {
+                        console.log('Share canceled', err);
+                    }
+                } else {
+                    // Если не поддерживается (ПК) - просто скачиваем
+                    const link = document.createElement('a');
+                    link.download = 'Travel-Route.jpg';
+                    link.href = finalCanvas.toDataURL('image/jpeg', 0.9);
+                    link.click();
+                }
+                document.body.removeChild(reportDiv);
+            }, 'image/jpeg', 0.9);
 
         } catch(e) { console.error(e); alert("Ошибка JPG: "+e.message); }
         finally { btn.innerHTML = oldT; }
