@@ -5,10 +5,9 @@
     --text-white: #ffffff;
     --text-dim: #e0e0e0;
     --modal-bg: #1e1e1e;
-    --header-h: 70px; 
+    --header-h: 60px; 
 }
 
-/* Цвета из Telegram */
 body.telegram-app {
     --bg-dark: var(--tg-theme-bg-color, #141414);
     --header-bg: var(--tg-theme-secondary-bg-color, #181818);
@@ -41,16 +40,15 @@ body {
 
 .header-right { display: flex; align-items: center; gap: 15px; }
 
-/* Кнопки инструментов */
 .user-panel { display: none; align-items: center; gap: 12px; margin-right: 15px; }
 .tool-btn {
     width: 38px; height: 38px; background: rgba(255,255,255, 0.05); 
     border: 1px solid transparent; border-radius: 50%; color: #ccc; font-size: 15px;
     display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s;
 }
-.tool-btn:hover, .tool-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255, 87, 34, 0.1); }
+.tool-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(255, 87, 34, 0.1); }
 
-/* Кнопка "Настройки" (шестеренка) - видна только на мобилках */
+/* Кнопка настроек в меню */
 #btn-mobile-settings { display: none; }
 
 .btn-pro {
@@ -76,9 +74,9 @@ body {
 .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
 .sidebar { width: 45%; min-width: 580px; background: rgba(20, 20, 20, 0.98); display: grid; grid-template-columns: 220px 1fr; border-right: 1px solid #222; height: 100%; position: relative; z-index: 5; }
 
-/* ЛЕВАЯ КОЛОНКА (НАСТРОЙКИ) */
+/* Настройки (Desktop) */
 .settings-col { background: #181818; padding: 20px; border-right: 1px solid #222; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
-.settings-close-btn { display: none; } /* Крестик закрытия настроек (только для мобил) */
+.settings-close-btn { display: none; } 
 
 h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent); margin: 0 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
 label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; }
@@ -88,25 +86,17 @@ input {
     box-sizing: border-box; outline: none; 
 }
 
-/* ПРАВАЯ КОЛОНКА (СПИСОК) */
+/* Список маршрутов */
 .route-col { position: relative; display: flex; flex-direction: column; overflow: hidden; }
-.route-list-scroll { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 120px; } 
+.route-list-scroll { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 140px; } 
 .route-header-block { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .route-header-block h2 { margin: 0; font-size: 20px; font-weight: 700; }
-
-/* Кнопка сворачивания карты */
-.map-toggle-btn {
-    display: none; /* На ПК скрыта */
-    background: #333; color: #fff; border: 1px solid #555;
-    padding: 5px 10px; border-radius: 4px; font-size: 10px; text-transform: uppercase; cursor: pointer;
-}
-.map-toggle-btn.active { background: var(--accent); border-color: var(--accent); }
 
 .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
 .search-box input { background: #222; color: #fff; border: 1px solid #333; font-size: 14px; }
 .btn-add { background: var(--accent); color: #fff; border: none; border-radius: 6px; width: 44px; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-/* КАРТОЧКИ, ПОДВАЛ, МОДАЛКИ (Оставляем как было, код сокращен для удобства, он такой же) */
+/* Карточка */
 .waypoint-card { background: #1f1f1f; border: 1px solid #333; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; position: relative; }
 .waypoint-card.start { border-left: 3px solid #4CAF50; }
 .waypoint-card.point { border-left: 3px solid var(--accent); }
@@ -120,83 +110,78 @@ input {
 .stage-summary { margin-top: 6px; text-align: right; padding-top: 4px; }
 .stage-total-line { color: var(--accent); font-weight: 800; font-size: 14px; }
 
-.footer-total { background: #181818; border-top: 1px solid #333; padding: 15px 30px; position: absolute; bottom: 0; width: 100%; z-index: 20; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); }
+/* Подвал с итогами и копирайтом */
+.footer-total { background: #181818; border-top: 1px solid #333; padding: 15px 20px; position: absolute; bottom: 0; width: 100%; z-index: 20; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; }
 .footer-main { display: flex; justify-content: space-between; margin-bottom: 8px; }
-.f-sum { font-size: 28px; color: var(--accent); font-weight: 900; }
-.footer-details-row { display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #888; }
+.f-sum { font-size: 24px; color: var(--accent); font-weight: 900; }
+.footer-details-row { display: flex; flex-wrap: wrap; gap: 15px; font-size: 12px; color: #888; margin-bottom: 10px; }
+.fd-item span { color: #fff; font-weight: 700; margin-left: 5px; }
 
-#map { width: 55%; height: 100%; background: #222; transition: height 0.3s ease; }
+/* Ссылки разработчика */
+.dev-links { border-top: 1px solid #333; padding-top: 8px; font-size: 10px; color: #666; display: flex; justify-content: space-between; align-items: center; }
+.dev-links a { color: #888; text-decoration: none; transition: 0.2s; }
+.dev-links a:hover { color: var(--accent); }
 
+#map { width: 55%; height: 100%; background: #222; }
+
+/* Модалки */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
 .modal-box { background: var(--modal-bg); padding: 25px; border-radius: 20px; border: 1px solid #333; width: 100%; max-width: 450px; text-align: center; color: var(--text-white); }
 .modal-inp { width: 100%; box-sizing: border-box; margin-bottom: 15px; background: #252525; border: 1px solid #333; color: #fff; border-radius: 10px; font-size: 16px; padding: 12px; }
 .btn-login { width: 100%; background: var(--accent); color: white; padding: 15px; border: none; border-radius: 10px; font-weight: 800; margin-top: 10px; }
 .routes-list { max-height: 50vh; overflow-y: auto; text-align: left; margin-bottom: 20px; border: 1px solid #333; border-radius: 10px; background: #151515; }
 .route-item { padding: 15px; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; }
-.route-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
 .btn-load-route { background: #2e7d32; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; }
 .btn-del-route { background: #c62828; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; }
+.close-modal { margin-top: 25px; color: #666; font-size: 13px; cursor: pointer; text-decoration: underline; }
+
+/* Плавающая кнопка переключения (Mobile FAB) */
+.view-toggle-fab {
+    display: none; /* Desktop hidden */
+    position: fixed; bottom: 120px; right: 20px;
+    width: 60px; height: 60px; border-radius: 30px;
+    background: var(--accent); color: #fff;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    z-index: 100; border: none; font-size: 24px;
+    justify-content: center; align-items: center;
+    cursor: pointer; transition: transform 0.2s;
+}
+.view-toggle-fab:active { transform: scale(0.9); }
 
 /* =========================================
-   МОБИЛЬНАЯ ВЕРСИЯ (FIX)
+   МОБИЛЬНАЯ ВЕРСИЯ (Full Screen Logic)
    ========================================= */
 @media (max-width: 900px) {
-    /* Черная шапка, фиксированный логотип */
-    .header { 
-        height: auto; min-height: 50px; 
-        flex-direction: column; align-items: stretch; justify-content: center;
-        padding: 10px 15px; background: #141414 !important; /* Принудительно черный */
-        gap: 10px;
-    }
-    
+    .header { flex-direction: column; height: auto; padding: 10px 15px; background: #141414 !important; gap: 10px; }
+    .header-center, .transport-tabs, .btn-home-style { display: none; }
     .header-left { text-align: center; }
-    .logo { justify-content: center; font-size: 16px; } /* Крупный лого по центру */
-    .header-center { display: none; }
+    .logo { justify-content: center; font-size: 16px; }
     .header-right { justify-content: center; width: 100%; }
+    .user-panel { justify-content: center; gap: 15px; }
+    .tool-btn { border-color: #333; color: #fff; }
+    .btn-pro { font-size: 10px; }
 
-    /* Панель инструментов - белые иконки */
-    .user-panel { gap: 15px; margin-right: 0; justify-content: center; }
-    .tool-btn { border-color: #333; color: #fff; } /* Белые иконки */
+    .main-container { display: block; position: relative; } /* Блочная верстка */
     
-    /* Скрываем кнопку "На главную" текстом, оставляем только в меню если надо, или вообще убираем для экономии */
-    .btn-home-style { display: none; } 
+    .sidebar { width: 100%; height: 100%; display: block; overflow: hidden; border: none; }
+    .route-col { height: 100%; }
     
-    /* Скрываем вкладки (занимают место) */
-    .transport-tabs { display: none; }
+    #map { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10; }
 
-    /* Основной контейнер */
-    .main-container { flex-direction: column-reverse; }
+    /* Логика переключения: Класс .show-map на body управляет видимостью */
+    body:not(.show-map) #map { display: none !important; }
+    body.show-map .sidebar { display: none !important; }
     
-    /* Сайдбар (список) */
-    .sidebar { width: 100%; min-width: 100%; flex: 1; grid-template-columns: 1fr; border-right: none; }
-    
-    /* Настройки - теперь это модальное окно на весь экран */
+    /* Настройки (Модалка) */
     .settings-col { 
-        display: none; /* Скрыто по умолчанию */
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
         background: #141414; z-index: 2000; padding: 20px; box-sizing: border-box;
     }
-    .settings-col.active { display: flex; } /* Показываем классом active */
-    
-    /* Кнопка закрытия настроек внутри модалки */
-    .settings-close-btn { 
-        display: block; width: 100%; padding: 15px; 
-        background: var(--accent); color: white; border: none; border-radius: 10px; 
-        font-weight: 800; margin-bottom: 20px; text-transform: uppercase;
-    }
-
-    /* Показываем кнопку шестеренки в меню */
+    .settings-col.active { display: flex; }
+    .settings-close-btn { display: block; width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 800; margin-bottom: 20px; text-transform: uppercase; }
     #btn-mobile-settings { display: flex; }
 
-    /* Кнопка управления картой */
-    .map-toggle-btn { display: block; }
-
-    /* Карта */
-    #map { width: 100%; height: 35vh; min-height: 35vh; }
+    .view-toggle-fab { display: flex; } /* Показываем кнопку */
     
-    /* Если карта свернута */
-    #map.map-hidden { height: 0; min-height: 0; flex: 0; }
-
-    /* Увеличиваем элементы управления для пальцев */
     .btn-add, .btn-del, .tool-btn { min-width: 44px; min-height: 44px; font-size: 18px; }
 }

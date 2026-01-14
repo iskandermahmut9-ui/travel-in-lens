@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: v8.0 (Mobile Polish)");
+    console.log("Planner JS: v9.0 (View Toggle & Credits)");
 
     let map = null;
     let supabase = null;
@@ -61,30 +61,33 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
-    // --- НОВОЕ: Мобильные настройки ---
+    // Мобильные настройки
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
     bind('btn-close-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
 
-    // --- НОВОЕ: Скрыть/Показать карту ---
-    bind('btn-toggle-map', () => {
-        const m = document.getElementById('map');
-        const b = document.getElementById('btn-toggle-map');
-        m.classList.toggle('map-hidden');
-        if(m.classList.contains('map-hidden')) {
-            b.innerText = "ПОКАЗАТЬ КАРТУ";
+    // --- ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВИДА (FAB) ---
+    bind('fab-toggle-view', () => {
+        document.body.classList.toggle('show-map');
+        const fabIcon = document.querySelector('#fab-toggle-view i');
+        
+        if (document.body.classList.contains('show-map')) {
+            // Если карта открыта -> иконка списка
+            fabIcon.classList.remove('fa-map');
+            fabIcon.classList.add('fa-list');
+            setTimeout(() => map.invalidateSize(), 100); // Ресайз карты
         } else {
-            b.innerText = "СКРЫТЬ КАРТУ";
-            setTimeout(() => map.invalidateSize(), 300); // Чтобы карта перерисовалась
+            // Если список открыт -> иконка карты
+            fabIcon.classList.remove('fa-list');
+            fabIcon.classList.add('fa-map');
         }
     });
 
-    // ПОИСК: Задержка увеличена до 1500мс
     const searchInp = document.getElementById('city-search');
     if(searchInp) {
         let timer;
         searchInp.addEventListener('input', () => {
             clearTimeout(timer);
-            timer = setTimeout(() => addBySearch(), 1500);
+            timer = setTimeout(() => addBySearch(), 1500); // Задержка 1.5 сек
         });
         searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
     }

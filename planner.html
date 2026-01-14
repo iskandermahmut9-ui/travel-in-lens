@@ -27,7 +27,6 @@
         <div id="user-panel" class="user-panel">
             <button class="tool-btn" id="btn-routes" title="Мои маршруты"><i class="fa-solid fa-folder-open"></i></button>
             <button class="tool-btn" id="btn-mobile-settings" title="Настройки"><i class="fa-solid fa-gear"></i></button>
-            
             <button class="tool-btn" id="btn-save-modal" title="Сохранить"><i class="fa-solid fa-cloud-arrow-up"></i></button>
             <button class="tool-btn" id="btn-download-img" title="Скачать JPG"><i class="fa-solid fa-image"></i></button>
             <button class="tool-btn" id="btn-export" title="Скачать PDF"><i class="fa-solid fa-file-pdf"></i></button>
@@ -65,10 +64,7 @@
 
         <div class="route-col">
             <div class="route-list-scroll" id="route-container">
-                <div class="route-header-block">
-                    <h2>Маршрут</h2>
-                    <button class="map-toggle-btn" id="btn-toggle-map">Скрыть карту</button>
-                </div>
+                <div class="route-header-block"><h2>Маршрут</h2></div>
                 <div class="search-box">
                     <input type="text" id="city-search" placeholder="Добавить город..." autocomplete="off">
                     <button class="btn-add" id="btn-add-search">+</button>
@@ -91,11 +87,19 @@
                     <div class="fd-item">🎫 <span id="s-exc">0</span></div>
                     <div class="fd-item">🎁 <span id="s-souv">0</span></div>
                 </div>
+                <div class="dev-links">
+                    <a href="https://by-alex.ru/" target="_blank">© 2026 by AL☰X</a>
+                    <a href="https://t.me/GavAlexandr" target="_blank">Связаться с разработчиком</a>
+                </div>
             </div>
         </div>
     </div>
     <div id="map"></div>
 </div>
+
+<button class="view-toggle-fab" id="fab-toggle-view" title="Переключить вид">
+    <i class="fa-solid fa-map"></i>
+</button>
 
 <div id="auth-modal" class="modal-overlay">
     <div class="modal-box">
