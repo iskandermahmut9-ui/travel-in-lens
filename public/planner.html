@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Планировщик | Travel-in-Lens</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <link rel="stylesheet" href="css/planner.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Russo+One&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <a href="https://travel-in-lens.ru/" class="logo">
+            ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ 🎥
+        </a>
+    </div>
+    
+    <div class="header-center"></div>
+
+    <div class="header-right">
+        <div id="user-panel" class="user-panel">
+            <button class="tool-btn" id="btn-routes" title="Мои маршруты"><i class="fa-solid fa-folder-open"></i></button>
+            <button class="tool-btn" id="btn-save-modal" title="Сохранить"><i class="fa-solid fa-cloud-arrow-up"></i></button>
+            
+            <button class="tool-btn" id="btn-download-img" title="Скачать JPG"><i class="fa-solid fa-image"></i></button>
+            <button class="tool-btn" id="btn-export" title="Скачать PDF"><i class="fa-solid fa-file-pdf"></i></button>
+            
+            <button class="tool-btn" id="btn-logout" title="Выход"><i class="fa-solid fa-sign-out"></i></button>
+        </div>
+
+        <button id="btn-pro-auth" class="btn-pro">PRO ВХОД</button>
+        
+        <a href="https://travel-in-lens.ru/" class="btn-home-style">
+            <i class="fa-solid fa-house"></i>
+            <span>НА ГЛАВНУЮ</span>
+        </a>
+    </div>
+</header>
+
+<div class="transport-tabs">
+    <div class="tab active">АВТОМОБИЛЬ</div>
+    <div class="tab">ПОЕЗД</div>
+    <div class="tab">САМОЛЕТ</div>
+</div>
+
+<div class="main-container">
+    <div class="sidebar">
+        <div class="settings-col">
+            <div>
+                <h3>Автомобиль</h3>
+                <div class="input-group"><label>РАСХОД (Л/100КМ)</label><input type="number" id="g-consumption" value="10"></div>
+                <div class="input-group"><label>ТОПЛИВО (₽/Л)</label><input type="number" id="g-fuel" value="55"></div>
+                <div class="input-group"><label>ЛЮДЕЙ (ЧЕЛ)</label><input type="number" id="g-people" value="2" min="1"></div>
+            </div>
+            <div>
+                <h3>Базовые цены</h3>
+                <div class="input-group"><label>ЖИЛЬЕ (СУТКИ)</label><input type="number" id="g-stay" value="3000"></div>
+                <div class="input-group"><label>ЕДА (ДЕНЬ/ЧЕЛ)</label><input type="number" id="g-food" value="1500"></div>
+                <div class="input-group"><label>ЭКСКУРСИЯ (ЧЕЛ)</label><input type="number" id="g-excursions" value="1000"></div>
+                <div class="input-group"><label>СУВЕНИРЫ (ВСЕГО)</label><input type="number" id="g-souvenirs" value="2000"></div>
+            </div>
+        </div>
+
+        <div class="route-col">
+            <div class="route-list-scroll" id="route-container">
+                <div class="route-header-block"><h2>Маршрут</h2></div>
+                <div class="search-box">
+                    <input type="text" id="city-search" placeholder="Добавить город..." autocomplete="off">
+                    <button class="btn-add" id="btn-add-search">+</button>
+                </div>
+                <div id="list-content"></div>
+            </div>
+            
+            <div class="footer-total">
+                <div class="footer-main">
+                    <div style="display:flex; align-items:baseline;">
+                        <span class="f-label">ИТОГО:</span>
+                        <span class="f-km" id="total-km">0 км (🌙 0 ночи)</span>
+                    </div>
+                    <div class="f-sum" id="total-sum">0 ₽</div>
+                </div>
+                <div class="footer-details-row">
+                    <div class="fd-item">⛽ <span id="s-fuel">0</span></div>
+                    <div class="fd-item">🏠 <span id="s-stay">0</span></div>
+                    <div class="fd-item">🍔 <span id="s-food">0</span></div>
+                    <div class="fd-item">🎫 <span id="s-exc">0</span></div>
+                    <div class="fd-item">🎁 <span id="s-souv">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="map"></div>
+</div>
+
+<div id="auth-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-head">ВХОД / РЕГИСТРАЦИЯ</div>
+        <input type="email" class="modal-inp" id="auth-email" placeholder="Email" autocomplete="new-password">
+        <input type="password" class="modal-inp" id="auth-pass" placeholder="Пароль" autocomplete="new-password">
+        <button class="btn-login" id="btn-login-action">ПРОДОЛЖИТЬ</button>
+        <div class="close-modal" id="btn-close-auth">Отмена</div>
+    </div>
+</div>
+
+<div id="save-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-head">СОХРАНИТЬ МАРШРУТ</div>
+        <input type="text" class="modal-inp" id="route-name-inp" placeholder="Название маршрута (например: Поездка на Юг)">
+        <button class="btn-login" id="btn-save-confirm">СОХРАНИТЬ НОВЫЙ</button>
+        <button class="btn-login" id="btn-save-update" style="background:#444; margin-top:10px; display:none">ПЕРЕЗАПИСАТЬ ТЕКУЩИЙ</button>
+        <div class="close-modal" onclick="document.getElementById('save-modal').style.display='none'">Отмена</div>
+    </div>
+</div>
+
+<div id="routes-modal" class="modal-overlay">
+    <div class="modal-box" style="width: 500px;">
+        <div class="modal-head">МОИ МАРШРУТЫ</div>
+        <div class="routes-list" id="routes-list-container">
+            <div style="padding:20px; color:#666">Загрузка...</div>
+        </div>
+        <div class="close-modal" id="btn-close-routes">Закрыть</div>
+    </div>
+</div>
+
+<script src="js/planner.js"></script>
+
+</body>
+</html>
