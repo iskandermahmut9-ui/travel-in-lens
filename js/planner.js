@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: v9.0 (View Toggle & Credits)");
+    console.log("Planner JS: v10.0 (Share & Fixes)");
 
     let map = null;
     let supabase = null;
@@ -57,26 +57,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
     bind('btn-export', generatePDF); 
-    bind('btn-download-img', generateFullImage); 
+    
+    // Кнопка ПОДЕЛИТЬСЯ
+    bind('btn-share-img', shareImage); 
+    
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
-    // Мобильные настройки
-    bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
-    bind('btn-close-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
+    // НАСТРОЙКИ: Открытие и закрытие
+    bind('btn-mobile-settings', () => { 
+        document.getElementById('settings-panel').classList.add('active'); 
+    });
+    bind('btn-close-settings', () => { 
+        document.getElementById('settings-panel').classList.remove('active'); 
+    });
 
-    // --- ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВИДА (FAB) ---
+    // ПЕРЕКЛЮЧЕНИЕ ВИДА (FAB)
     bind('fab-toggle-view', () => {
         document.body.classList.toggle('show-map');
         const fabIcon = document.querySelector('#fab-toggle-view i');
         
         if (document.body.classList.contains('show-map')) {
-            // Если карта открыта -> иконка списка
             fabIcon.classList.remove('fa-map');
             fabIcon.classList.add('fa-list');
-            setTimeout(() => map.invalidateSize(), 100); // Ресайз карты
+            setTimeout(() => map.invalidateSize(), 100);
         } else {
-            // Если список открыт -> иконка карты
             fabIcon.classList.remove('fa-list');
             fabIcon.classList.add('fa-map');
         }
@@ -87,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         let timer;
         searchInp.addEventListener('input', () => {
             clearTimeout(timer);
-            timer = setTimeout(() => addBySearch(), 1500); // Задержка 1.5 сек
+            timer = setTimeout(() => addBySearch(), 1500); 
         });
         searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
     }
@@ -391,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // --- 1. ГЕНЕРАЦИЯ PDF (Черный шрифт) ---
+    // --- 1. PDF ---
     async function generatePDF() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
         const btn = document.getElementById('btn-export');
@@ -430,7 +435,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
 
             const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(12); doc.setTextColor(0); doc.setFont('Roboto'); // Черный текст итога
+            doc.setFontSize(12); doc.setTextColor(0); doc.setFont('Roboto');
             doc.text(`Бюджет: ${grandTotal.toLocaleString()} RUB`, pageW - margin, finalY, { align: 'right' });
             
             doc.save('Travel-Route.pdf');
@@ -438,10 +443,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         finally { btn.innerHTML = oldT; }
     }
 
-    // --- 2. ГЕНЕРАЦИЯ JPG (Черный шрифт) ---
-    async function generateFullImage() {
+    // --- 2. ПОДЕЛИТЬСЯ (JPG) ---
+    async function shareImage() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
-        const btn = document.getElementById('btn-download-img');
+        const btn = document.getElementById('btn-share-img');
         const oldT = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
@@ -456,7 +461,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             reportDiv.style.background = 'white'; reportDiv.style.position = 'absolute';
             reportDiv.style.top = '-9999px'; reportDiv.style.fontFamily = 'Montserrat, sans-serif';
 
-            // ТУТ ТОЖЕ ДЕЛАЕМ ЧЕРНЫЙ ШРИФТ
             let tableHTML = `
                 <h2 style="margin:0 0 10px; color:#000;">${name}</h2>
                 <img src="${mapCanvas.toDataURL('image/png')}" style="width:100%; border-radius:8px; margin-bottom:20px;">
@@ -495,10 +499,32 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             reportDiv.innerHTML = tableHTML;
             document.body.appendChild(reportDiv);
+            
+            // Генерируем Blob
             const finalCanvas = await html2canvas(reportDiv, { scale: 2, backgroundColor: '#ffffff' });
-            const link = document.createElement('a');
-            link.download = 'Travel-Report.jpg'; link.href = finalCanvas.toDataURL('image/jpeg', 0.9); link.click();
-            document.body.removeChild(reportDiv);
+            finalCanvas.toBlob(async (blob) => {
+                const file = new File([blob], "Travel-Route.jpg", { type: "image/jpeg" });
+
+                // Пытаемся вызвать нативное окно "Поделиться"
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Мой маршрут',
+                            text: 'Смотри, какой маршрут я составил!'
+                        });
+                    } catch (err) {
+                        console.log('Share canceled', err);
+                    }
+                } else {
+                    // Если не поддерживается (ПК) - просто скачиваем
+                    const link = document.createElement('a');
+                    link.download = 'Travel-Route.jpg';
+                    link.href = finalCanvas.toDataURL('image/jpeg', 0.9);
+                    link.click();
+                }
+                document.body.removeChild(reportDiv);
+            }, 'image/jpeg', 0.9);
 
         } catch(e) { console.error(e); alert("Ошибка JPG: "+e.message); }
         finally { btn.innerHTML = oldT; }
