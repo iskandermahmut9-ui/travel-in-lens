@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: v10.0 (Share & Fixes)");
+    console.log("Planner JS: v11.0 (Fix Layout & Apply Btn)");
 
     let map = null;
     let supabase = null;
@@ -57,43 +57,32 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
     bind('btn-export', generatePDF); 
-    
-    // Кнопка ПОДЕЛИТЬСЯ
     bind('btn-share-img', shareImage); 
-    
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
-    // НАСТРОЙКИ: Открытие и закрытие
-    bind('btn-mobile-settings', () => { 
-        document.getElementById('settings-panel').classList.add('active'); 
-    });
-    bind('btn-close-settings', () => { 
-        document.getElementById('settings-panel').classList.remove('active'); 
-    });
+    // НАСТРОЙКИ
+    bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
+    
+    // КНОПКА ПРИМЕНИТЬ (она же закрыть)
+    bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
 
-    // ПЕРЕКЛЮЧЕНИЕ ВИДА (FAB)
+    // FAB
     bind('fab-toggle-view', () => {
         document.body.classList.toggle('show-map');
         const fabIcon = document.querySelector('#fab-toggle-view i');
-        
         if (document.body.classList.contains('show-map')) {
-            fabIcon.classList.remove('fa-map');
-            fabIcon.classList.add('fa-list');
+            fabIcon.classList.remove('fa-map'); fabIcon.classList.add('fa-list');
             setTimeout(() => map.invalidateSize(), 100);
         } else {
-            fabIcon.classList.remove('fa-list');
-            fabIcon.classList.add('fa-map');
+            fabIcon.classList.remove('fa-list'); fabIcon.classList.add('fa-map');
         }
     });
 
     const searchInp = document.getElementById('city-search');
     if(searchInp) {
         let timer;
-        searchInp.addEventListener('input', () => {
-            clearTimeout(timer);
-            timer = setTimeout(() => addBySearch(), 1500); 
-        });
+        searchInp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => addBySearch(), 1500); });
         searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
     }
 
@@ -443,27 +432,46 @@ document.addEventListener('DOMContentLoaded', async function() {
         finally { btn.innerHTML = oldT; }
     }
 
-    // --- 2. ПОДЕЛИТЬСЯ (JPG) ---
+  // --- 2. ПОДЕЛИТЬСЯ (JPG) ---
     async function shareImage() {
-        if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
+        // Проверка авторизации (если нужно)
+        // if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
+
         const btn = document.getElementById('btn-share-img');
-        const oldT = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        const oldIcon = btn.innerHTML; 
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; // Крутилка загрузки
 
         try {
+            // 1. Готовим карту (смещаем фокус)
             const mapEl = await prepareMapForCapture();
-            const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 2, allowTaint: true, scrollX: 0, scrollY: 0, backgroundColor: '#ffffff' });
             
+            // 2. Делаем скриншот карты (настройки для мобильных важны!)
+            const mapCanvas = await html2canvas(mapEl, { 
+                useCORS: true, 
+                scale: 2, // Высокое качество
+                allowTaint: true, 
+                scrollX: 0, 
+                scrollY: -window.scrollY, // Фикс смещения на мобилках
+                backgroundColor: '#ffffff' 
+            });
+            
+            // 3. Собираем данные
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Мой маршрут";
 
+            // 4. Создаем временный отчет для скриншота
             const reportDiv = document.createElement('div');
-            reportDiv.style.width = '800px'; reportDiv.style.padding = '20px';
-            reportDiv.style.background = 'white'; reportDiv.style.position = 'absolute';
-            reportDiv.style.top = '-9999px'; reportDiv.style.fontFamily = 'Montserrat, sans-serif';
+            // Важно: на мобильных нельзя убирать div слишком далеко (top: -9999px), иначе он пустой
+            // Мы делаем его прозрачным, но "видимым" для рендера
+            Object.assign(reportDiv.style, {
+                position: 'fixed', left: '0', top: '0', zIndex: '-100',
+                width: '800px', background: 'white', padding: '20px',
+                fontFamily: 'Montserrat, sans-serif', color: '#000'
+            });
 
             let tableHTML = `
                 <h2 style="margin:0 0 10px; color:#000;">${name}</h2>
-                <img src="${mapCanvas.toDataURL('image/png')}" style="width:100%; border-radius:8px; margin-bottom:20px;">
+                <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border-radius:8px; margin-bottom:20px; border:1px solid #ddd;">
                 <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
                     <thead>
                         <tr style="background:#FF5722; color:white;">
@@ -471,21 +479,33 @@ document.addEventListener('DOMContentLoaded', async function() {
                             <th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th>
                             <th style="padding:10px;">Бензин</th><th style="padding:10px;">Жилье</th>
                             <th style="padding:10px;">Еда</th><th style="padding:10px;">Досуг</th>
-                            <th style="padding:10px;">Сув.</th><th style="padding:10px;">Итого</th>
+                            <th style="padding:10px;">Итого</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${body.map((row, i) => `
                             <tr style="background:${i%2===0?'#fff':'#f5f5f5'}; border-bottom:1px solid #ddd;">
                                 <td style="padding:8px; text-align:left; font-weight:bold;">${row[0]}</td>
-                                ${row.slice(1).map(cell => `<td style="padding:8px; text-align:center;">${cell}</td>`).join('')}
+                                <td style="padding:8px; text-align:center;">${row[1]}</td>
+                                <td style="padding:8px; text-align:center;">${row[2]}</td>
+                                <td style="padding:8px; text-align:center;">${row[3]}</td>
+                                <td style="padding:8px; text-align:center;">${row[4]}</td>
+                                <td style="padding:8px; text-align:center;">${row[5]}</td>
+                                <td style="padding:8px; text-align:center;">${row[6]}</td>
+                                <td style="padding:8px; text-align:center; font-weight:bold;">${row[8]}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                     <tfoot>
                         <tr style="background:#333; color:white; font-weight:bold;">
                             <td style="padding:8px; text-align:left;">${footer[0]}</td>
-                            ${footer.slice(1).map(cell => `<td style="padding:8px; text-align:center;">${cell}</td>`).join('')}
+                            <td style="padding:8px; text-align:center;">${footer[1]}</td>
+                            <td style="padding:8px; text-align:center;">${footer[2]}</td>
+                            <td style="padding:8px; text-align:center;">${footer[3]}</td>
+                            <td style="padding:8px; text-align:center;">${footer[4]}</td>
+                            <td style="padding:8px; text-align:center;">${footer[5]}</td>
+                            <td style="padding:8px; text-align:center;">${footer[6]}</td>
+                            <td style="padding:8px; text-align:center;">${footer[8]}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -493,40 +513,47 @@ document.addEventListener('DOMContentLoaded', async function() {
                     Бюджет поездки: ${grandTotal.toLocaleString()} RUB
                 </div>
                 <div style="text-align:left; margin-top:5px; font-size:12px; color:#666;">
-                    travel-in-lens.ru
+                    Сделано в Travel-In-Lens
                 </div>
             `;
 
             reportDiv.innerHTML = tableHTML;
             document.body.appendChild(reportDiv);
             
-            // Генерируем Blob
-            const finalCanvas = await html2canvas(reportDiv, { scale: 2, backgroundColor: '#ffffff' });
+            // 5. Финальный рендер в JPG
+            const finalCanvas = await html2canvas(reportDiv, { scale: 2, useCORS:true });
+            
             finalCanvas.toBlob(async (blob) => {
-                const file = new File([blob], "Travel-Route.jpg", { type: "image/jpeg" });
+                const file = new File([blob], "route_plan.jpg", { type: "image/jpeg" });
 
-                // Пытаемся вызвать нативное окно "Поделиться"
+                // ПОПЫТКА 1: Нативное меню "Поделиться" (Мобильные)
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
                             files: [file],
                             title: 'Мой маршрут',
-                            text: 'Смотри, какой маршрут я составил!'
+                            text: `Маршрут: ${name}. Бюджет: ${grandTotal.toLocaleString()} ₽`
                         });
                     } catch (err) {
-                        console.log('Share canceled', err);
+                        console.log('Отмена шеринга', err);
                     }
-                } else {
-                    // Если не поддерживается (ПК) - просто скачиваем
+                } 
+                // ПОПЫТКА 2: Просто скачивание (ПК / Андроид без поддержки)
+                else {
                     const link = document.createElement('a');
-                    link.download = 'Travel-Route.jpg';
+                    link.download = `Route_${Date.now()}.jpg`;
                     link.href = finalCanvas.toDataURL('image/jpeg', 0.9);
                     link.click();
                 }
-                document.body.removeChild(reportDiv);
+                document.body.removeChild(reportDiv); // Чистим мусор
             }, 'image/jpeg', 0.9);
 
-        } catch(e) { console.error(e); alert("Ошибка JPG: "+e.message); }
-        finally { btn.innerHTML = oldT; }
+        } catch(e) { 
+            console.error(e); 
+            alert("Ошибка создания картинки: "+e.message); 
+        }
+        finally { 
+            btn.innerHTML = oldIcon; // Возвращаем иконку кнопке
+        }
     }
 });

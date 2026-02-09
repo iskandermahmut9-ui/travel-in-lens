@@ -111,11 +111,9 @@ function App() {
     else document.body.style.overflow = 'auto';
   }, [activePanel, menuOpen]);
 
-  // --- ИСПРАВЛЕННАЯ ЗОНА РЕАКЦИИ (20% В ЦЕНТРЕ) ---
   useEffect(() => {
     const observerOptions = {
       root: null,
-      // 40% сверху и 40% снизу - мертвая зона. Остается 20% в центре.
       rootMargin: '-40% 0px -40% 0px', 
       threshold: 0
     };
@@ -140,7 +138,8 @@ function App() {
        ...document.querySelectorAll('.glass-row-btn'),    
        ...document.querySelectorAll('.vote-card'),        
        ...document.querySelectorAll('.img-card-btn'), 
-       ...document.querySelectorAll('#amy .item-card') 
+       ...document.querySelectorAll('#amy .item-card'),
+       ...document.querySelectorAll('.planner-promo-card') 
     ];
 
     targets.forEach(el => observer.observe(el));
@@ -214,6 +213,10 @@ function App() {
           <a href="#hero" onClick={() => setMenuOpen(false)}>Главная</a>
           <a href="#destinations" onClick={() => setMenuOpen(false)}>Направления</a>
           <a href="#roulette" onClick={() => setMenuOpen(false)}>Рулетка</a>
+          
+          {/* ОБНОВЛЕННАЯ ССЫЛКА (БЕЛАЯ + СКРОЛЛ) */}
+          <a href="#planner-helpers" onClick={() => setMenuOpen(false)}>Твой маршрут</a>
+          
           <a href="#news" onClick={() => setMenuOpen(false)}>Новости</a>
           <a href="#team" onClick={() => setMenuOpen(false)}>Команда</a>
           <a href="#amy" onClick={() => setMenuOpen(false)}>С собакой</a>
@@ -265,9 +268,38 @@ function App() {
         <TravelRoulette />
       </section>
 
+      {/* НОВЫЙ БЛОК: ПОМОЩНИКИ В ПЛАНИРОВАНИИ */}
+      {/* Добавлен ID для навигации, центрирование и стиль заголовка */}
+      <section id="planner-helpers" className="textured-bg" style={{ padding: '80px 20px', borderTop: '1px solid #333', textAlign: 'center' }}>
+        <div className="content-wrap">
+          <h2 style={{ 
+              color: 'white', 
+              marginBottom: '40px', 
+              fontSize: '2.5rem', 
+              textTransform: 'uppercase',
+              fontWeight: '900'
+          }}>
+            Помощники в планировании путешествий
+          </h2>
+          
+          <a href="/planner.html" className="planner-promo-card">
+            <div className="planner-icon-wrap">
+              📍
+            </div>
+            <div className="planner-text-content">
+              <h3>Планировщик путешествий</h3>
+              <p>Рассчитай бюджет, топливо и маршрут в один клик</p>
+            </div>
+            <div className="planner-arrow">
+              ➜
+            </div>
+          </a>
+
+        </div>
+      </section>
+
       <section className="textured-bg" style={{ 
-        padding: '80px 20px',
-        borderTop: '1px solid rgba(255,255,255,0.1)'
+        padding: '20px 20px 80px 20px',
       }}>
          <TravelWidgets />
       </section>
