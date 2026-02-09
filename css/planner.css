@@ -115,7 +115,25 @@ input {
 .waypoint-card.point { border-left: 3px solid var(--accent); }
 .card-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-wrapper { flex: 1; display: flex; align-items: center; min-width: 0; }
-.drag-handle { color: #555; cursor: grab; font-size: 16px; margin-right: 8px; flex-shrink: 0; }
+/* УВЕЛИЧЕННАЯ РУЧКА ПЕРЕТАСКИВАНИЯ */
+.drag-handle {
+    cursor: grab;
+    color: #666; /* Цвет точек */
+    font-size: 26px; /* Крупные точки */
+    padding: 0 15px 0 5px; /* Большая зона для пальца справа */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%; /* На всю высоту карточки */
+    touch-action: none; /* Чтобы браузер не пытался скроллить при касании */
+    flex-shrink: 0;
+}
+
+/* При нажатии меняем цвет, чтобы было понятно, что схватили */
+.drag-handle:active {
+    color: var(--accent);
+    cursor: grabbing;
+}
 .city-name-input { background: transparent; border: none; color: #fff; font-size: 16px; font-weight: 800; width: 100%; outline: none; text-overflow: ellipsis; }
 .btn-del { background: transparent; color: #666; border: none; width: 24px; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .road-info { display: flex; gap: 15px; margin-bottom: 8px; font-size: 11px; font-weight: 700; color: #aaa; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; }
