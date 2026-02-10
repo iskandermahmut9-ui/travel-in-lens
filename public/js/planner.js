@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-save-update', saveUpdate);
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
-    bind('btn-export', generatePDF); 
+    bind('btn-export', shareImage); 
     bind('btn-share-img', shareImage); 
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
@@ -432,128 +432,98 @@ document.addEventListener('DOMContentLoaded', async function() {
         finally { btn.innerHTML = oldT; }
     }
 
-  // --- 2. ПОДЕЛИТЬСЯ (JPG) ---
+ // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ СОХРАНЕНИЯ (JPG) ---
     async function shareImage() {
-        // Проверка авторизации (если нужно)
-        // if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
-
-        const btn = document.getElementById('btn-share-img');
+        const btn = document.getElementById('btn-export'); // Берем кнопку PDF (раз мы ее нажали)
         const oldIcon = btn.innerHTML; 
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; // Крутилка загрузки
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; // Крутилка
 
         try {
-            // 1. Готовим карту (смещаем фокус)
-            const mapEl = await prepareMapForCapture();
-            
-            // 2. Делаем скриншот карты (настройки для мобильных важны!)
+            const mapEl = document.getElementById('map');
+            if (!mapEl) throw new Error("Карта не найдена");
+
+            // 1. Делаем скриншот карты (настройки для мобильных)
             const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true, 
-                scale: 2, // Высокое качество
-                allowTaint: true, 
-                scrollX: 0, 
-                scrollY: -window.scrollY, // Фикс смещения на мобилках
-                backgroundColor: '#ffffff' 
+                useCORS: true,       // Разрешить грузить карту с чужого сервера
+                scale: 1,            // Качество 1 (чтобы не вылетело по памяти)
+                allowTaint: false,
+                backgroundColor: '#ffffff',
+                ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') // Скрыть кнопки зума
             });
-            
-            // 3. Собираем данные
+
+            // 2. Формируем отчет
             const { body, footer, grandTotal } = getTableData();
-            const name = document.getElementById('route-name-inp').value || "Мой маршрут";
+            const name = document.getElementById('route-name-inp').value || "Маршрут";
 
-            // 4. Создаем временный отчет для скриншота
+            // Создаем невидимый блок для финальной картинки
             const reportDiv = document.createElement('div');
-            // Важно: на мобильных нельзя убирать div слишком далеко (top: -9999px), иначе он пустой
-            // Мы делаем его прозрачным, но "видимым" для рендера
-            Object.assign(reportDiv.style, {
-                position: 'fixed', left: '0', top: '0', zIndex: '-100',
-                width: '800px', background: 'white', padding: '20px',
-                fontFamily: 'Montserrat, sans-serif', color: '#000'
-            });
-
-            let tableHTML = `
-                <h2 style="margin:0 0 10px; color:#000;">${name}</h2>
-                <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border-radius:8px; margin-bottom:20px; border:1px solid #ddd;">
-                <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
-                    <thead>
+            reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
+            reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
+            
+            // Заполняем HTML
+            reportDiv.innerHTML = `
+                <div style="padding:20px;">
+                    <h2 style="margin:0 0 15px;">${name}</h2>
+                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;">
+                    <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
                             <th style="padding:10px; text-align:left;">Город</th>
                             <th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th>
-                            <th style="padding:10px;">Бензин</th><th style="padding:10px;">Жилье</th>
-                            <th style="padding:10px;">Еда</th><th style="padding:10px;">Досуг</th>
                             <th style="padding:10px;">Итого</th>
                         </tr>
-                    </thead>
-                    <tbody>
                         ${body.map((row, i) => `
-                            <tr style="background:${i%2===0?'#fff':'#f5f5f5'}; border-bottom:1px solid #ddd;">
-                                <td style="padding:8px; text-align:left; font-weight:bold;">${row[0]}</td>
+                            <tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;">
+                                <td style="padding:8px; font-weight:bold;">${row[0]}</td>
                                 <td style="padding:8px; text-align:center;">${row[1]}</td>
                                 <td style="padding:8px; text-align:center;">${row[2]}</td>
-                                <td style="padding:8px; text-align:center;">${row[3]}</td>
-                                <td style="padding:8px; text-align:center;">${row[4]}</td>
-                                <td style="padding:8px; text-align:center;">${row[5]}</td>
-                                <td style="padding:8px; text-align:center;">${row[6]}</td>
-                                <td style="padding:8px; text-align:center; font-weight:bold;">${row[8]}</td>
+                                <td style="padding:8px; text-align:right;">${row[8]} ₽</td>
                             </tr>
                         `).join('')}
-                    </tbody>
-                    <tfoot>
                         <tr style="background:#333; color:white; font-weight:bold;">
-                            <td style="padding:8px; text-align:left;">${footer[0]}</td>
-                            <td style="padding:8px; text-align:center;">${footer[1]}</td>
-                            <td style="padding:8px; text-align:center;">${footer[2]}</td>
-                            <td style="padding:8px; text-align:center;">${footer[3]}</td>
-                            <td style="padding:8px; text-align:center;">${footer[4]}</td>
-                            <td style="padding:8px; text-align:center;">${footer[5]}</td>
-                            <td style="padding:8px; text-align:center;">${footer[6]}</td>
-                            <td style="padding:8px; text-align:center;">${footer[8]}</td>
+                            <td style="padding:10px;">ВСЕГО</td>
+                            <td style="padding:10px; text-align:center;">${footer[1]}</td>
+                            <td style="padding:10px; text-align:center;">${footer[2]}</td>
+                            <td style="padding:10px; text-align:right;">${grandTotal.toLocaleString()} ₽</td>
                         </tr>
-                    </tfoot>
-                </table>
-                <div style="text-align:right; margin-top:15px; font-size:18px; font-weight:bold; color:#000;">
-                    Бюджет поездки: ${grandTotal.toLocaleString()} RUB
-                </div>
-                <div style="text-align:left; margin-top:5px; font-size:12px; color:#666;">
-                    Сделано в Travel-In-Lens
+                    </table>
+                    <div style="margin-top:20px; text-align:right; color:#888; font-size:12px;">travel-in-lens.ru</div>
                 </div>
             `;
-
-            reportDiv.innerHTML = tableHTML;
             document.body.appendChild(reportDiv);
-            
-            // 5. Финальный рендер в JPG
-            const finalCanvas = await html2canvas(reportDiv, { scale: 2, useCORS:true });
-            
-            finalCanvas.toBlob(async (blob) => {
-                const file = new File([blob], "route_plan.jpg", { type: "image/jpeg" });
 
-                // ПОПЫТКА 1: Нативное меню "Поделиться" (Мобильные)
+            // 3. Финальный рендер в JPG
+            const finalCanvas = await html2canvas(reportDiv, { scale: 1.5 });
+            document.body.removeChild(reportDiv); // Чистим мусор
+
+            finalCanvas.toBlob(async (blob) => {
+                if(!blob) throw new Error("Пустой файл");
+                const file = new File([blob], "Route_Plan.jpg", { type: "image/jpeg" });
+
+                // План А: Системное меню "Поделиться"
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
                             files: [file],
                             title: 'Мой маршрут',
-                            text: `Маршрут: ${name}. Бюджет: ${grandTotal.toLocaleString()} ₽`
+                            text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
                         });
-                    } catch (err) {
-                        console.log('Отмена шеринга', err);
-                    }
+                    } catch (err) { console.log('Share закрыт пользователем'); }
                 } 
-                // ПОПЫТКА 2: Просто скачивание (ПК / Андроид без поддержки)
+                // План Б: Просто скачивание (если Поделиться не сработало)
                 else {
                     const link = document.createElement('a');
                     link.download = `Route_${Date.now()}.jpg`;
-                    link.href = finalCanvas.toDataURL('image/jpeg', 0.9);
+                    link.href = URL.createObjectURL(blob);
+                    document.body.appendChild(link);
                     link.click();
+                    document.body.removeChild(link);
                 }
-                document.body.removeChild(reportDiv); // Чистим мусор
-            }, 'image/jpeg', 0.9);
+            }, 'image/jpeg', 0.85);
 
-        } catch(e) { 
-            console.error(e); 
-            alert("Ошибка создания картинки: "+e.message); 
-        }
-        finally { 
-            btn.innerHTML = oldIcon; // Возвращаем иконку кнопке
+        } catch (e) {
+            alert("Ошибка: " + e.message); // ТЕПЕРЬ ТЫ УВИДИШЬ, ПОЧЕМУ ОНО НЕ КАЧАЛОСЬ
+        } finally {
+            btn.innerHTML = oldIcon;
         }
     }
 });
