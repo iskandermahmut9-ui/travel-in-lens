@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: v11.0 (Fix Layout & Apply Btn)");
+    console.log("Planner JS: v12.0 (Hybrid PDF/JPG fix)");
 
     let map = null;
     let supabase = null;
@@ -56,15 +56,29 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-save-update', saveUpdate);
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
-    bind('btn-export', saveAsJPG); // Теперь она вызывает функцию JPG
-    bind('btn-share-img', shareImage); 
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
+    // !!! ГЛАВНОЕ ИСПРАВЛЕНИЕ: ОПРЕДЕЛЯЕМ УСТРОЙСТВО !!!
+    const exportBtn = document.getElementById('btn-export');
+    if (exportBtn) {
+        if (window.innerWidth < 900) {
+            // Если МОБИЛЬНЫЙ -> JPG
+            exportBtn.onclick = saveAsJPG;
+            exportBtn.title = "Скачать JPG";
+            exportBtn.innerHTML = '<i class="fa-solid fa-image"></i>'; // Меняем иконку на лету
+        } else {
+            // Если КОМПЬЮТЕР -> PDF (как было раньше)
+            exportBtn.onclick = generatePDF;
+            exportBtn.title = "Скачать PDF";
+            exportBtn.innerHTML = '<i class="fa-solid fa-file-pdf"></i>';
+        }
+    }
+
+    bind('btn-share-img', saveAsJPG); // Вторая кнопка всегда делает JPG
+
     // НАСТРОЙКИ
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
-    
-    // КНОПКА ПРИМЕНИТЬ (она же закрыть)
     bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
 
     // FAB
@@ -340,7 +354,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         updateRoute(); renderList();
     }
 
-    // --- ЭКСПОРТ (Общие функции) ---
     function getTableData() {
         let tDays=0, tDist=0, tFuel=0, tStay=0, tFood=0, tExc=0, tSouv=0, gTotal=0;
         const ppl = v('g-people')||1, rate = v('g-consumption'), price = v('g-fuel');
@@ -385,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // --- 1. PDF ---
+    // --- СТАРАЯ ДОБРАЯ ФУНКЦИЯ PDF (ВЕРНУЛ ДЛЯ КОМПЬЮТЕРОВ) ---
     async function generatePDF() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
         const btn = document.getElementById('btn-export');
@@ -432,35 +445,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         finally { btn.innerHTML = oldT; }
     }
 
- // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ СОХРАНЕНИЯ (JPG) ---
-    async function shareImage() {
-        const btn = document.getElementById('btn-export'); // Берем кнопку PDF (раз мы ее нажали)
-        const oldIcon = btn.innerHTML; 
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; // Крутилка
+    // --- НОВАЯ ФУНКЦИЯ JPG (БЕЗОПАСНАЯ ДЛЯ МОБИЛОК) ---
+    async function saveAsJPG() {
+        const btn = document.activeElement; 
+        const oldIcon = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
             const mapEl = document.getElementById('map');
             if (!mapEl) throw new Error("Карта не найдена");
 
-            // 1. Делаем скриншот карты (настройки для мобильных)
+            // ИСПРАВЛЕНИЕ: SCALE = 1 (чтобы не переполнить память телефона)
             const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true,       // Разрешить грузить карту с чужого сервера
-                scale: 1,            // Качество 1 (чтобы не вылетело по памяти)
+                useCORS: true,       
+                scale: 1,  // <<< ЭТО САМОЕ ВАЖНОЕ (было 2)
                 allowTaint: false,
                 backgroundColor: '#ffffff',
-                ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') // Скрыть кнопки зума
+                ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
 
-            // 2. Формируем отчет
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
 
-            // Создаем невидимый блок для финальной картинки
+            // Рендерим отчет для JPG
             const reportDiv = document.createElement('div');
-            reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
+            // Важно: на мобильных лучше не прятать далеко, а перекрывать
+            reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
-            // Заполняем HTML
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
                     <h2 style="margin:0 0 15px;">${name}</h2>
@@ -491,15 +503,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             `;
             document.body.appendChild(reportDiv);
 
-            // 3. Финальный рендер в JPG
-            const finalCanvas = await html2canvas(reportDiv, { scale: 1.5 });
-            document.body.removeChild(reportDiv); // Чистим мусор
+            // ИСПРАВЛЕНИЕ: Тоже уменьшил качество для стабильности
+            const finalCanvas = await html2canvas(reportDiv, { scale: 1 });
+            document.body.removeChild(reportDiv);
 
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) throw new Error("Пустой файл");
+                if(!blob) throw new Error("Пустой файл (память переполнена)");
                 const file = new File([blob], "Route_Plan.jpg", { type: "image/jpeg" });
 
-                // План А: Системное меню "Поделиться"
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
@@ -507,10 +518,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                             title: 'Мой маршрут',
                             text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
                         });
-                    } catch (err) { console.log('Share закрыт пользователем'); }
-                } 
-                // План Б: Просто скачивание (если Поделиться не сработало)
-                else {
+                    } catch (err) {}
+                } else {
                     const link = document.createElement('a');
                     link.download = `Route_${Date.now()}.jpg`;
                     link.href = URL.createObjectURL(blob);
@@ -521,73 +530,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             }, 'image/jpeg', 0.85);
 
         } catch (e) {
-            alert("Ошибка: " + e.message); // ТЕПЕРЬ ТЫ УВИДИШЬ, ПОЧЕМУ ОНО НЕ КАЧАЛОСЬ
+            alert("Ошибка сохранения: " + e.message);
         } finally {
             btn.innerHTML = oldIcon;
         }
     }
-// --- НОВАЯ ФУНКЦИЯ СОХРАНЕНИЯ JPG ---
-async function saveAsJPG() {
-    const btn = document.getElementById('btn-export');
-    const oldIcon = btn.innerHTML;
-    
-    // 1. Показываем крутилку, чтобы было видно, что процесс пошел
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-    try {
-        // 2. Настройки для карты (чтобы не было белого экрана)
-        const mapEl = document.getElementById('map');
-        
-        // Генерируем картинку с помощью html2canvas
-        const canvas = await html2canvas(mapEl, {
-            useCORS: true,       // Разрешаем загрузку карт
-            scale: 2,            // Хорошее качество
-            allowTaint: false,   // Защита от ошибок безопасности
-            ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') // Скрываем кнопки +/-
-        });
-
-        // 3. Создаем имя файла
-        const fileName = "Route_" + Date.now() + ".jpg";
-
-        // 4. Превращаем в файл
-        canvas.toBlob(async (blob) => {
-            if (!blob) {
-                alert("Ошибка: Не удалось создать картинку."); 
-                return;
-            }
-            
-            const file = new File([blob], fileName, { type: "image/jpeg" });
-
-            // 5. ГЛАВНЫЙ МОМЕНТ ДЛЯ ТЕЛЕГРАМА
-            // Сначала пробуем "Поделиться" (это открывает шторку "Сохранить в галерею")
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Мой маршрут',
-                        text: 'Смотри, какой маршрут я построил!'
-                    });
-                } catch (err) {
-                    // Если пользователь нажал "Отмена", ничего страшного
-                }
-            } else {
-                // Если "Поделиться" недоступно (редко на мобилках), пробуем прямую ссылку
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = URL.createObjectURL(blob);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-
-        }, 'image/jpeg', 0.9); // Качество 0.9
-
-    } catch (e) {
-        // Если что-то сломалось, покажем ошибку на экране телефона
-        alert("Ошибка JPG: " + e.message);
-    } finally {
-        // Возвращаем иконку обратно
-        btn.innerHTML = oldIcon;
-    }
-}    
 });
