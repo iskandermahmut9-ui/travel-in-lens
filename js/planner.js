@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-save-update', saveUpdate);
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
-    bind('btn-export', shareImage); 
+    bind('btn-export', saveAsJPG); // Теперь она вызывает функцию JPG
     bind('btn-share-img', shareImage); 
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
@@ -526,4 +526,68 @@ document.addEventListener('DOMContentLoaded', async function() {
             btn.innerHTML = oldIcon;
         }
     }
+// --- НОВАЯ ФУНКЦИЯ СОХРАНЕНИЯ JPG ---
+async function saveAsJPG() {
+    const btn = document.getElementById('btn-export');
+    const oldIcon = btn.innerHTML;
+    
+    // 1. Показываем крутилку, чтобы было видно, что процесс пошел
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    try {
+        // 2. Настройки для карты (чтобы не было белого экрана)
+        const mapEl = document.getElementById('map');
+        
+        // Генерируем картинку с помощью html2canvas
+        const canvas = await html2canvas(mapEl, {
+            useCORS: true,       // Разрешаем загрузку карт
+            scale: 2,            // Хорошее качество
+            allowTaint: false,   // Защита от ошибок безопасности
+            ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') // Скрываем кнопки +/-
+        });
+
+        // 3. Создаем имя файла
+        const fileName = "Route_" + Date.now() + ".jpg";
+
+        // 4. Превращаем в файл
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                alert("Ошибка: Не удалось создать картинку."); 
+                return;
+            }
+            
+            const file = new File([blob], fileName, { type: "image/jpeg" });
+
+            // 5. ГЛАВНЫЙ МОМЕНТ ДЛЯ ТЕЛЕГРАМА
+            // Сначала пробуем "Поделиться" (это открывает шторку "Сохранить в галерею")
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Мой маршрут',
+                        text: 'Смотри, какой маршрут я построил!'
+                    });
+                } catch (err) {
+                    // Если пользователь нажал "Отмена", ничего страшного
+                }
+            } else {
+                // Если "Поделиться" недоступно (редко на мобилках), пробуем прямую ссылку
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+        }, 'image/jpeg', 0.9); // Качество 0.9
+
+    } catch (e) {
+        // Если что-то сломалось, покажем ошибку на экране телефона
+        alert("Ошибка JPG: " + e.message);
+    } finally {
+        // Возвращаем иконку обратно
+        btn.innerHTML = oldIcon;
+    }
+}    
 });
