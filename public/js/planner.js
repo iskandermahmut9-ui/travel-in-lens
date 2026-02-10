@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: v15.0 (Android App Fix + Map Fix)");
+    console.log("Planner JS: v16.0 (PC Telegram Download Fix)");
 
     let map = null;
     let supabase = null;
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }).setView([55.75, 37.61], 6);
 
         L.control.zoom({position: 'topright'}).addTo(map);
-        // ВАЖНО: crossOrigin: 'anonymous' нужен для корректного скриншота карты
+        // useCORS и crossOrigin критичны для скриншотов
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { crossOrigin: 'anonymous' }).addTo(map);
         map.on('click', async (e) => { await addPoint(e.latlng.lat, e.latlng.lng); });
 
@@ -60,11 +60,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
-    // ЛОГИКА КНОПКИ ЭКСПОРТА
+    // ЭКСПОРТ
     const exportBtn = document.getElementById('btn-export');
     if (exportBtn) {
-        // На узких экранах (ТГ, мобилки) -> JPG
-        // На широких (ПК Сайт) -> PDF
+        // Логика кнопок:
+        // Если ширина < 900px (мобилки, планшеты, узкие окна ТГ) -> JPG
+        // Если > 900px (Полноценный десктоп сайт) -> PDF
         if (window.innerWidth < 900) {
             exportBtn.onclick = saveAsJPG;
             exportBtn.title = "Скачать JPG";
@@ -77,7 +78,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     bind('btn-share-img', saveAsJPG); 
-
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
     bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
 
@@ -378,8 +378,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (routeLayer) group.addLayer(routeLayer);
             map.fitBounds(group.getBounds(), { padding: [50, 50], animate: false });
         }
-        // Даем карте прогрузиться, чтобы она не была белой в JPG
-        await new Promise(r => setTimeout(r, 1000));
+        // Даем карте прогрузиться чуть дольше для ТГ Desktop
+        await new Promise(r => setTimeout(r, 1200));
         return document.getElementById('map');
     }
 
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // --- PDF ДЛЯ САЙТА (Не трогаем, работает хорошо) ---
+    // --- PDF ГЕНЕРАТОР (Desktop) ---
     async function generatePDF() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
         const btn = document.getElementById('btn-export');
@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             await loadCyrillicFont(doc);
             const mapEl = await prepareMapForCapture();
-            // Тут scale: 2 для хорошего качества на ПК
+            
             const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 2, allowTaint: true, scrollX: 0, scrollY: 0, backgroundColor: '#ffffff' });
             const mapImg = mapCanvas.toDataURL('image/png');
             
@@ -445,21 +445,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         finally { btn.innerHTML = oldT; }
     }
 
-    // --- JPG ДЛЯ ТЕЛЕГРАМ / АНДРОИД (Fix: Fallback Viewer) ---
+    // --- JPG ГЕНЕРАТОР (Smart Logic) ---
     async function saveAsJPG() {
         const btn = document.activeElement; 
         const oldIcon = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
+            // 1. ОПРЕДЕЛЯЕМ УСТРОЙСТВО
+            const ua = navigator.userAgent;
+            // Ищем признаки реальных мобильных ОС (iOS, Android)
+            const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+            
+            // Получаем карту
             const mapEl = document.getElementById('map');
-            // Ждем 500мс, чтобы тайлы карты точно подгрузились (исправляет белую карту на ПК ТГ)
-            await new Promise(r => setTimeout(r, 500));
+            // Важно: ждем прогрузки тайлов (особенно для ТГ Desktop)
+            await new Promise(r => setTimeout(r, 800));
 
-            // Снижаем качество для мобилок (Scale 1), чтобы не вылетать
+            // Генерируем с чуть большим скейлом (1.5), чтобы и на ПК было норм, и на мобиле не вылетало
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true,       
-                scale: 1,  
+                scale: 1.5,
                 allowTaint: false,
                 backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
@@ -468,7 +474,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
 
-            // Собираем отчет
+            // Собираем HTML отчет
             const reportDiv = document.createElement('div');
             reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
@@ -512,48 +518,44 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if(!blob) { alert("Ошибка: Память переполнена"); return; }
                 const file = new File([blob], fileName, { type: "image/jpeg" });
 
-                // ПЛАН А: Если есть API "Поделиться" (Телефоны)
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Маршрут',
-                            text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
-                        });
-                        return; // Если получилось поделиться - выходим
-                    } catch (err) {
-                        // Если юзер отменил - ничего страшного, но если ошибка API - идем дальше
-                    }
-                }
+                // РАЗВИЛКА ЛОГИКИ
 
-                // ПЛАН Б: Если это ПК (Скачиваем файл)
-                // Проверяем, не мобильное ли устройство
-                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-                if (!isMobile) {
+                if (isMobileOS) {
+                    // === СЦЕНАРИЙ ДЛЯ ТЕЛЕФОНОВ ===
+                    // Пытаемся "Поделиться"
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Маршрут',
+                                text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
+                            });
+                            return; 
+                        } catch (err) { /* Отмена пользователем - игнор */ }
+                    }
+                    // Если share не сработал (WebView, Старый Андроид) -> Fallback POPUP
+                    showImagePopup(finalCanvas.toDataURL('image/jpeg', 0.9));
+
+                } else {
+                    // === СЦЕНАРИЙ ДЛЯ ПК (И ТГ ДЕСКТОП) ===
+                    // Просто скачиваем файл. Никаких Share.
                     const link = document.createElement('a');
                     link.download = fileName;
                     link.href = URL.createObjectURL(blob);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
-                    return;
                 }
-
-                // ПЛАН В: ЖЕЛЕЗОБЕТОННЫЙ (Для Android WebView / Telegram App)
-                // Если скачка заблокирована и share не сработал - показываем картинку прямо на экране.
-                // Юзер нажмет и подержит пальцем -> "Сохранить изображение"
-                showImagePopup(finalCanvas.toDataURL('image/jpeg', 0.9));
 
             }, 'image/jpeg', 0.85);
 
         } catch (e) {
-            alert("Ошибка: " + e.message);
+            alert("Ошибка сохранения: " + e.message);
         } finally {
             btn.innerHTML = oldIcon;
         }
     }
 
-    // Вспомогательная функция для показа картинки (Plan C)
     function showImagePopup(base64Img) {
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0';
