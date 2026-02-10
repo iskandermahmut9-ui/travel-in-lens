@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: v12.0 (Hybrid PDF/JPG fix)");
+    console.log("Planner JS: v14.0 (Fix: Filename & Mobile Share)");
 
     let map = null;
     let supabase = null;
@@ -59,23 +59,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
-    // !!! ГЛАВНОЕ ИСПРАВЛЕНИЕ: ОПРЕДЕЛЯЕМ УСТРОЙСТВО !!!
+    // --- ГИБРИДНАЯ КНОПКА (PDF/JPG) ---
     const exportBtn = document.getElementById('btn-export');
     if (exportBtn) {
+        // Логика: Если ширина экрана меньше 900px (телефон/планшет) -> Режим Картинки
+        // Если больше (Компьютер) -> Режим PDF
         if (window.innerWidth < 900) {
-            // Если МОБИЛЬНЫЙ -> JPG
             exportBtn.onclick = saveAsJPG;
             exportBtn.title = "Скачать JPG";
-            exportBtn.innerHTML = '<i class="fa-solid fa-image"></i>'; // Меняем иконку на лету
+            exportBtn.innerHTML = '<i class="fa-solid fa-image"></i>'; 
         } else {
-            // Если КОМПЬЮТЕР -> PDF (как было раньше)
             exportBtn.onclick = generatePDF;
             exportBtn.title = "Скачать PDF";
             exportBtn.innerHTML = '<i class="fa-solid fa-file-pdf"></i>';
         }
     }
 
-    bind('btn-share-img', saveAsJPG); // Вторая кнопка всегда делает JPG
+    // Кнопка "Поделиться" (рядом с PDF) всегда делает JPG
+    bind('btn-share-img', saveAsJPG); 
 
     // НАСТРОЙКИ
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
@@ -398,7 +399,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // --- СТАРАЯ ДОБРАЯ ФУНКЦИЯ PDF (ВЕРНУЛ ДЛЯ КОМПЬЮТЕРОВ) ---
+    // --- ФУНКЦИЯ PDF (Только для ПК) ---
     async function generatePDF() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
         const btn = document.getElementById('btn-export');
@@ -440,12 +441,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             doc.setFontSize(12); doc.setTextColor(0); doc.setFont('Roboto');
             doc.text(`Бюджет: ${grandTotal.toLocaleString()} RUB`, pageW - margin, finalY, { align: 'right' });
             
-            doc.save('Travel-Route.pdf');
+            doc.save('travel-in-lens.ru.pdf'); // Имя файла для PDF
         } catch(e) { console.error(e); alert("Ошибка PDF: "+e.message); }
         finally { btn.innerHTML = oldT; }
     }
 
-    // --- НОВАЯ ФУНКЦИЯ JPG (БЕЗОПАСНАЯ ДЛЯ МОБИЛОК) ---
+    // --- ФУНКЦИЯ JPG (Мобилки + ПК) ---
     async function saveAsJPG() {
         const btn = document.activeElement; 
         const oldIcon = btn.innerHTML;
@@ -455,10 +456,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             const mapEl = document.getElementById('map');
             if (!mapEl) throw new Error("Карта не найдена");
 
-            // ИСПРАВЛЕНИЕ: SCALE = 1 (чтобы не переполнить память телефона)
+            // НАСТРОЙКИ ДЛЯ МОБИЛЬНЫХ (scale: 1 спасает от вылетов)
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true,       
-                scale: 1,  // <<< ЭТО САМОЕ ВАЖНОЕ (было 2)
+                scale: 1,  
                 allowTaint: false,
                 backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
@@ -467,9 +468,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
 
-            // Рендерим отчет для JPG
+            // Создаем блок для картинки
             const reportDiv = document.createElement('div');
-            // Важно: на мобильных лучше не прятать далеко, а перекрывать
+            // Перекрываем экран, чтобы не было видно "скачка" (для Android важно, чтобы элемент был виден)
             reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
@@ -503,25 +504,38 @@ document.addEventListener('DOMContentLoaded', async function() {
             `;
             document.body.appendChild(reportDiv);
 
-            // ИСПРАВЛЕНИЕ: Тоже уменьшил качество для стабильности
+            // Финальный скриншот
             const finalCanvas = await html2canvas(reportDiv, { scale: 1 });
             document.body.removeChild(reportDiv);
 
+            // --- СОХРАНЕНИЕ ---
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) throw new Error("Пустой файл (память переполнена)");
-                const file = new File([blob], "Route_Plan.jpg", { type: "image/jpeg" });
+                if(!blob) { alert("Ошибка: Память переполнена (Blob null)"); return; }
+                
+                // ТРЕБУЕМОЕ ИМЯ ФАЙЛА
+                const fileName = "travel-in-lens.ru.jpg";
+                const file = new File([blob], fileName, { type: "image/jpeg" });
 
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                // ПЛАН А: Если это ТЕЛЕФОН (Android/iOS) -> Пробуем "Поделиться"
+                // НО: Если это ПК (Windows Telegram) -> navigator.canShare может врать и пытаться открыть меню Windows
+                // Поэтому добавим проверку: На ПК - СРАЗУ СКАЧИВАЕМ.
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+                if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
                             files: [file],
                             title: 'Мой маршрут',
                             text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
                         });
-                    } catch (err) {}
-                } else {
+                    } catch (err) {
+                        // Если пользователь отменил, ничего не делаем
+                    }
+                } 
+                // ПЛАН Б: Если это ПК или Поделиться не сработало -> Прямая ссылка (Download)
+                else {
                     const link = document.createElement('a');
-                    link.download = `Route_${Date.now()}.jpg`;
+                    link.download = fileName;
                     link.href = URL.createObjectURL(blob);
                     document.body.appendChild(link);
                     link.click();
@@ -530,7 +544,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }, 'image/jpeg', 0.85);
 
         } catch (e) {
-            alert("Ошибка сохранения: " + e.message);
+            alert("Сбой сохранения: " + e.message); // Теперь покажет ошибку, если она есть
         } finally {
             btn.innerHTML = oldIcon;
         }
