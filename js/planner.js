@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: v14.0 (Fix: Filename & Mobile Share)");
+    console.log("Planner JS: v15.0 (Android App Fix + Map Fix)");
 
     let map = null;
     let supabase = null;
@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }).setView([55.75, 37.61], 6);
 
         L.control.zoom({position: 'topright'}).addTo(map);
+        // ВАЖНО: crossOrigin: 'anonymous' нужен для корректного скриншота карты
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { crossOrigin: 'anonymous' }).addTo(map);
         map.on('click', async (e) => { await addPoint(e.latlng.lat, e.latlng.lng); });
 
@@ -59,11 +60,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
-    // --- ГИБРИДНАЯ КНОПКА (PDF/JPG) ---
+    // ЛОГИКА КНОПКИ ЭКСПОРТА
     const exportBtn = document.getElementById('btn-export');
     if (exportBtn) {
-        // Логика: Если ширина экрана меньше 900px (телефон/планшет) -> Режим Картинки
-        // Если больше (Компьютер) -> Режим PDF
+        // На узких экранах (ТГ, мобилки) -> JPG
+        // На широких (ПК Сайт) -> PDF
         if (window.innerWidth < 900) {
             exportBtn.onclick = saveAsJPG;
             exportBtn.title = "Скачать JPG";
@@ -75,14 +76,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Кнопка "Поделиться" (рядом с PDF) всегда делает JPG
     bind('btn-share-img', saveAsJPG); 
 
-    // НАСТРОЙКИ
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
     bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
 
-    // FAB
     bind('fab-toggle-view', () => {
         document.body.classList.toggle('show-map');
         const fabIcon = document.querySelector('#fab-toggle-view i');
@@ -380,6 +378,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (routeLayer) group.addLayer(routeLayer);
             map.fitBounds(group.getBounds(), { padding: [50, 50], animate: false });
         }
+        // Даем карте прогрузиться, чтобы она не была белой в JPG
         await new Promise(r => setTimeout(r, 1000));
         return document.getElementById('map');
     }
@@ -399,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // --- ФУНКЦИЯ PDF (Только для ПК) ---
+    // --- PDF ДЛЯ САЙТА (Не трогаем, работает хорошо) ---
     async function generatePDF() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
         const btn = document.getElementById('btn-export');
@@ -409,11 +408,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4'); 
             const pageW = doc.internal.pageSize.getWidth();
-            const pageH = doc.internal.pageSize.getHeight();
             const margin = 10;
 
             await loadCyrillicFont(doc);
             const mapEl = await prepareMapForCapture();
+            // Тут scale: 2 для хорошего качества на ПК
             const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 2, allowTaint: true, scrollX: 0, scrollY: 0, backgroundColor: '#ffffff' });
             const mapImg = mapCanvas.toDataURL('image/png');
             
@@ -441,12 +440,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             doc.setFontSize(12); doc.setTextColor(0); doc.setFont('Roboto');
             doc.text(`Бюджет: ${grandTotal.toLocaleString()} RUB`, pageW - margin, finalY, { align: 'right' });
             
-            doc.save('travel-in-lens.ru.pdf'); // Имя файла для PDF
+            doc.save('travel-in-lens.ru.pdf');
         } catch(e) { console.error(e); alert("Ошибка PDF: "+e.message); }
         finally { btn.innerHTML = oldT; }
     }
 
-    // --- ФУНКЦИЯ JPG (Мобилки + ПК) ---
+    // --- JPG ДЛЯ ТЕЛЕГРАМ / АНДРОИД (Fix: Fallback Viewer) ---
     async function saveAsJPG() {
         const btn = document.activeElement; 
         const oldIcon = btn.innerHTML;
@@ -454,9 +453,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         try {
             const mapEl = document.getElementById('map');
-            if (!mapEl) throw new Error("Карта не найдена");
+            // Ждем 500мс, чтобы тайлы карты точно подгрузились (исправляет белую карту на ПК ТГ)
+            await new Promise(r => setTimeout(r, 500));
 
-            // НАСТРОЙКИ ДЛЯ МОБИЛЬНЫХ (scale: 1 спасает от вылетов)
+            // Снижаем качество для мобилок (Scale 1), чтобы не вылетать
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true,       
                 scale: 1,  
@@ -468,9 +468,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
 
-            // Создаем блок для картинки
+            // Собираем отчет
             const reportDiv = document.createElement('div');
-            // Перекрываем экран, чтобы не было видно "скачка" (для Android важно, чтобы элемент был виден)
             reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
@@ -504,49 +503,84 @@ document.addEventListener('DOMContentLoaded', async function() {
             `;
             document.body.appendChild(reportDiv);
 
-            // Финальный скриншот
             const finalCanvas = await html2canvas(reportDiv, { scale: 1 });
             document.body.removeChild(reportDiv);
 
-            // --- СОХРАНЕНИЕ ---
+            const fileName = "travel-in-lens.ru.jpg";
+
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) { alert("Ошибка: Память переполнена (Blob null)"); return; }
-                
-                // ТРЕБУЕМОЕ ИМЯ ФАЙЛА
-                const fileName = "travel-in-lens.ru.jpg";
+                if(!blob) { alert("Ошибка: Память переполнена"); return; }
                 const file = new File([blob], fileName, { type: "image/jpeg" });
 
-                // ПЛАН А: Если это ТЕЛЕФОН (Android/iOS) -> Пробуем "Поделиться"
-                // НО: Если это ПК (Windows Telegram) -> navigator.canShare может врать и пытаться открыть меню Windows
-                // Поэтому добавим проверку: На ПК - СРАЗУ СКАЧИВАЕМ.
-                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-                if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
+                // ПЛАН А: Если есть API "Поделиться" (Телефоны)
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
                             files: [file],
-                            title: 'Мой маршрут',
+                            title: 'Маршрут',
                             text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
                         });
+                        return; // Если получилось поделиться - выходим
                     } catch (err) {
-                        // Если пользователь отменил, ничего не делаем
+                        // Если юзер отменил - ничего страшного, но если ошибка API - идем дальше
                     }
-                } 
-                // ПЛАН Б: Если это ПК или Поделиться не сработало -> Прямая ссылка (Download)
-                else {
+                }
+
+                // ПЛАН Б: Если это ПК (Скачиваем файл)
+                // Проверяем, не мобильное ли устройство
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                if (!isMobile) {
                     const link = document.createElement('a');
                     link.download = fileName;
                     link.href = URL.createObjectURL(blob);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
+                    return;
                 }
+
+                // ПЛАН В: ЖЕЛЕЗОБЕТОННЫЙ (Для Android WebView / Telegram App)
+                // Если скачка заблокирована и share не сработал - показываем картинку прямо на экране.
+                // Юзер нажмет и подержит пальцем -> "Сохранить изображение"
+                showImagePopup(finalCanvas.toDataURL('image/jpeg', 0.9));
+
             }, 'image/jpeg', 0.85);
 
         } catch (e) {
-            alert("Сбой сохранения: " + e.message); // Теперь покажет ошибку, если она есть
+            alert("Ошибка: " + e.message);
         } finally {
             btn.innerHTML = oldIcon;
         }
+    }
+
+    // Вспомогательная функция для показа картинки (Plan C)
+    function showImagePopup(base64Img) {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0';
+        overlay.style.width = '100%'; overlay.style.height = '100%';
+        overlay.style.background = 'rgba(0,0,0,0.8)'; overlay.style.zIndex = '9999';
+        overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+
+        const msg = document.createElement('div');
+        msg.innerHTML = "Нажмите на картинку и держите, чтобы сохранить";
+        msg.style.color = '#fff'; msg.style.marginBottom = '10px'; msg.style.textAlign='center';
+
+        const img = document.createElement('img');
+        img.src = base64Img;
+        img.style.maxWidth = '90%'; img.style.maxHeight = '80%';
+        img.style.border = '2px solid #fff';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.innerText = "Закрыть";
+        closeBtn.style.marginTop = '15px'; closeBtn.style.padding = '10px 20px';
+        closeBtn.style.background = '#FF5722'; closeBtn.style.color = '#fff';
+        closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '5px';
+        closeBtn.onclick = () => document.body.removeChild(overlay);
+
+        overlay.appendChild(msg);
+        overlay.appendChild(img);
+        overlay.appendChild(closeBtn);
+        document.body.appendChild(overlay);
     }
 });
