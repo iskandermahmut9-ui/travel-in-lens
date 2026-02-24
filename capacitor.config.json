@@ -1,5 +1,6 @@
 {
-  "appId": "ru.travelinlens.app",
-  "appName": "Travel In Lens",
-  "webDir": "dist"
+  "appId": "ru.travelinlens.planner",
+  "appName": "Планировщик путешествий", 
+  "webDir": "dist",
+  "bundledWebRuntime": false
 }
