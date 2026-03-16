@@ -1,17 +1,16 @@
 document.addEventListener('DOMContentLoaded', async function() {
     console.log("Planner JS: VK Mini App Version");
 
-    // --- 0. ИНИЦИАЛИЗАЦИЯ VK MINI APPS ---
+  // --- 0. ИНИЦИАЛИЗАЦИЯ И БЕСШОВНАЯ АВТОРИЗАЦИЯ VK ---
     try {
         if (window.vkBridge) {
-            // Сообщаем ВК, что приложение загрузилось (обязательно для модерации)
+            // Сообщаем ВК, что приложение загрузилось
             vkBridge.send('VKWebAppInit');
 
-            // Подписываемся на смену темы (светлая/темная)
+            // Подписываемся на смену темы
             vkBridge.subscribe((e) => {
                 if (e.detail.type === 'VKWebAppUpdateConfig') {
                     const scheme = e.detail.data.scheme ? e.detail.data.scheme : 'client_light';
-                    // Проверяем, темная ли сейчас тема у пользователя
                     if (scheme === 'space_gray' || scheme === 'vkcom_dark' || scheme === 'client_dark') {
                         document.body.classList.remove('vk-light');
                         document.body.classList.add('vk-dark');
@@ -21,6 +20,33 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 }
             });
+
+            // --- МАГИЯ БЕСШОВНОГО ВХОДА ---
+            // Немного ждем инициализацию Supabase, затем получаем данные из ВК
+            setTimeout(async () => {
+                try {
+                    const vkUser = await vkBridge.send('VKWebAppGetUserInfo');
+                    if (vkUser && vkUser.id && supabase) {
+                        // Генерируем технические данные для Supabase
+                        const vkEmail = `vk_${vkUser.id}@travel-in-lens.ru`;
+                        const vkPass = `vk_secure_pass_${vkUser.id}!`;
+
+                        // Пробуем войти
+                        let { data, error } = await supabase.auth.signInWithPassword({ email: vkEmail, password: vkPass });
+                        
+                        if (error) {
+                            // Если аккаунта еще нет, регистрируем
+                            let { data: regData, error: regError } = await supabase.auth.signUp({ email: vkEmail, password: vkPass });
+                            if (!regError && regData.user) handleLoginSuccess(regData.user);
+                        } else {
+                            // Если всё ок, пускаем
+                            handleLoginSuccess(data.user);
+                        }
+                    }
+                } catch (authErr) {
+                    console.log("Ошибка тихой авторизации ВК", authErr);
+                }
+            }, 1000); 
         }
     } catch (e) {
         console.log("VK Bridge не загружен (работаем вне ВК)", e);
