@@ -521,6 +521,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4'); 
             const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
             const margin = 10;
 
             await loadCyrillicFont(doc);
@@ -531,8 +532,20 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             const imgProps = doc.getImageProperties(mapImg);
             const imgW = pageW - (margin*2);
-            const imgH = (imgProps.height * imgW) / imgProps.width;
-            doc.addImage(mapImg, 'PNG', margin, margin, imgW, imgH);
+            let imgH = (imgProps.height * imgW) / imgProps.width;
+
+            // --- РЕШЕНИЕ ПРОБЛЕМЫ С 2 ЛИСТАМИ ---
+            // Ограничиваем высоту карты, чтобы она не занимала больше 45% листа
+            const maxMapH = pageH * 0.45; 
+            if (imgH > maxMapH) {
+                const scaledW = (imgProps.width * maxMapH) / imgProps.height;
+                const offsetX = margin + (imgW - scaledW) / 2; // Центрируем ужатую карту
+                doc.addImage(mapImg, 'PNG', offsetX, margin, scaledW, maxMapH);
+                imgH = maxMapH; // Сохраняем новую высоту для таблицы
+            } else {
+                doc.addImage(mapImg, 'PNG', margin, margin, imgW, imgH);
+            }
+            // ------------------------------------
 
             const { body, footer, grandTotal } = getTableData();
 
@@ -557,7 +570,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch(e) { console.error(e); alert("Ошибка PDF: "+e.message); }
         finally { btn.innerHTML = oldT; }
     }
-
     async function saveAsJPG() {
         const btn = document.activeElement; 
         const oldIcon = btn.innerHTML;
@@ -568,7 +580,25 @@ document.addEventListener('DOMContentLoaded', async function() {
             const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
             
             const mapEl = document.getElementById('map');
-            await new Promise(r => setTimeout(r, 800));
+            
+            // --- РЕШЕНИЕ ПРОБЛЕМЫ СКРЫТОЙ КАРТЫ НА ТЕЛЕФОНЕ ---
+            const wasMapHidden = !document.body.classList.contains('show-map');
+            if (window.innerWidth <= 900 && wasMapHidden) {
+                // Временно показываем карту для скриншота
+                document.body.classList.add('show-map');
+                setTimeout(() => map.invalidateSize(), 100);
+                await new Promise(r => setTimeout(r, 1000)); // Ждем подгрузки тайлов
+            } else {
+                await new Promise(r => setTimeout(r, 800));
+            }
+
+            // Центрируем маршрут перед снимком
+            if (waypoints.length > 0) {
+                const group = new L.featureGroup(waypoints.map(p => p.marker));
+                if (routeLayer) group.addLayer(routeLayer);
+                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
+                await new Promise(r => setTimeout(r, 500)); 
+            }
 
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true,       
@@ -577,6 +607,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
+
+            // Прячем карту обратно, если она была скрыта
+            if (window.innerWidth <= 900 && wasMapHidden) {
+                document.body.classList.remove('show-map');
+            }
+            // --------------------------------------------------
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
