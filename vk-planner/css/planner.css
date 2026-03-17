@@ -22,7 +22,7 @@ body {
 .header {
     background: var(--header-bg); height: var(--header-h);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 30px; border-bottom: 1px solid rgba(255,255,255, 0.05); 
+    padding: env(safe-area-inset-top) 30px 0 30px; border-bottom: 1px solid rgba(255,255,255, 0.05); 
     z-index: 1000; flex-shrink: 0;
 }
 
@@ -115,7 +115,7 @@ input {
 .stage-summary { margin-top: 6px; text-align: right; padding-top: 4px; }
 .stage-total-line { color: var(--accent); font-weight: 800; font-size: 14px; }
 
-.footer-total { background: #181818; border-top: 1px solid #333; padding: 15px 20px; position: absolute; bottom: 0; width: 100%; z-index: 20; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; max-height: 150px; overflow-y: auto; left: 0; }
+.footer-total { background: #181818; border-top: 1px solid #333; padding: 15px 20px; position: absolute; bottom: 0; width: 100%; z-index: 20; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; max-height: 150px; overflow-y: auto; left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 15px); }
 .footer-main { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .f-sum { font-size: 24px; color: var(--accent); font-weight: 900; }
 .footer-details-row { display: flex; flex-wrap: wrap; gap: 15px; font-size: 12px; color: #888; margin-bottom: 10px; }
@@ -181,7 +181,7 @@ body.vk-dark {
    ========================================= */
 @media (max-width: 900px) {
     .header { 
-        flex-direction: column; height: auto; padding: 5px 10px; 
+        flex-direction: column; height: auto; padding: calc(env(safe-area-inset-top) + 5px) 10px 5px 10px;
         background: var(--header-bg) !important; gap: 5px; 
     }
     .header-center, .transport-tabs, .btn-home-style { display: none; }

@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         exportBtn.innerHTML = '<i class="fa-solid fa-image"></i>'; 
     }
 
-    bind('btn-share-img', saveAsJPG); 
+    bind('btn-share-img', shareToVKStory); 
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
     bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
 
@@ -712,5 +712,91 @@ document.addEventListener('DOMContentLoaded', async function() {
         overlay.appendChild(img);
         overlay.appendChild(closeBtn);
         document.body.appendChild(overlay);
+    }
+    async function shareToVKStory() {
+        const btn = document.getElementById('btn-share-img');
+        const oldIcon = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        try {
+            const mapEl = document.getElementById('map');
+            
+            // Показываем карту, если скрыта (для мобилок)
+            const wasMapHidden = !document.body.classList.contains('show-map');
+            if (window.innerWidth <= 900 && wasMapHidden) {
+                document.body.classList.add('show-map');
+                setTimeout(() => map.invalidateSize(), 100);
+                await new Promise(r => setTimeout(r, 1000));
+            } else { await new Promise(r => setTimeout(r, 800)); }
+
+            if (waypoints.length > 0) {
+                const group = new L.featureGroup(waypoints.map(p => p.marker));
+                if (routeLayer) group.addLayer(routeLayer);
+                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
+                await new Promise(r => setTimeout(r, 500)); 
+            }
+
+            // Делаем скриншот карты
+            const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 1.5, backgroundColor: '#ffffff', ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') });
+
+            if (window.innerWidth <= 900 && wasMapHidden) { document.body.classList.remove('show-map'); }
+
+            const { body, footer, grandTotal } = getTableData();
+            const name = document.getElementById('route-name-inp').value || "Мой маршрут";
+
+            // Собираем вертикальную карточку специально под формат Историй ВК
+            const storyDiv = document.createElement('div');
+            storyDiv.style.position = 'fixed'; storyDiv.style.left = '0'; storyDiv.style.top = '0'; storyDiv.style.zIndex = '-999';
+            storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px'; // Формат истории
+            storyDiv.style.background = 'linear-gradient(135deg, #1f1f1f, #141414)'; 
+            storyDiv.style.fontFamily = 'Arial, sans-serif'; storyDiv.style.color = '#fff';
+            
+            storyDiv.innerHTML = `
+                <div style="padding: 80px 60px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
+                    <div style="font-size: 50px; font-weight: 900; color: #FF5722; text-transform: uppercase; margin-bottom: 20px;">${name}</div>
+                    <div style="font-size: 30px; color: #aaa; margin-bottom: 50px;">Бюджет поездки: <span style="color:#fff; font-weight:bold">${grandTotal.toLocaleString()} ₽</span></div>
+                    
+                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width: 100%; height: 700px; object-fit: cover; border-radius: 40px; border: 4px solid #333; margin-bottom: 50px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                    
+                    <div style="background: #252525; border-radius: 30px; padding: 40px;">
+                        ${body.slice(0, 5).map(row => `
+                            <div style="display: flex; justify-content: space-between; font-size: 32px; padding: 20px 0; border-bottom: 1px solid #333;">
+                                <span>${row[0]}</span><span style="color: #FF5722; font-weight: bold;">${row[8]} ₽</span>
+                            </div>
+                        `).join('')}
+                        ${body.length > 5 ? `<div style="text-align:center; color:#888; margin-top:20px; font-size: 24px;">и еще ${body.length - 5} точек...</div>` : ''}
+                    </div>
+                    <div style="margin-top: auto; text-align: center; font-size: 35px; font-weight: bold; color: #666;">
+                        Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(storyDiv);
+
+            const finalCanvas = await html2canvas(storyDiv, { scale: 1 });
+            document.body.removeChild(storyDiv);
+            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.8);
+
+            // Отправляем сгенерированную картинку в Истории ВК
+            if (window.vkBridge) {
+                await vkBridge.send("VKWebAppShowStoryBox", {
+                    background_type: "image",
+                    blob: base64Img,
+                    attachment: {
+                        text: "open",
+                        type: "url",
+                        url: "https://vk.com/app54486894" // Ссылка с кнопкой на твое приложение
+                    }
+                });
+            } else {
+                alert("Публикация историй доступна только внутри приложения ВКонтакте");
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert("Ошибка создания истории");
+        } finally {
+            btn.innerHTML = oldIcon;
+        }
     }
 });
