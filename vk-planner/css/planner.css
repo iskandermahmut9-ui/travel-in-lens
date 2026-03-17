@@ -237,3 +237,10 @@ body.vk-dark {
     .view-toggle-fab { display: flex; bottom: 120px; }
     .btn-add, .btn-del { min-width: 36px; min-height: 36px; font-size: 16px; }
 }
+/* --- ИСПРАВЛЕНИЕ СПИСКА МАРШРУТОВ --- */
+.route-name { font-weight: 800; color: var(--text-white); margin-bottom: 4px; }
+.route-date { font-size: 11px; color: #888; }
+
+/* Поддержка светлой темы для списка */
+body.vk-light .routes-list { background: #f9f9f9; border-color: #ddd; }
+body.vk-light .route-item { border-bottom: 1px solid #eee; }

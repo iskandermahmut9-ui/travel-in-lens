@@ -122,18 +122,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
-    // ЭКСПОРТ
+    // ЭКСПОРТ (теперь всегда в JPG)
     const exportBtn = document.getElementById('btn-export');
     if (exportBtn) {
-        if (window.innerWidth < 900) {
-            exportBtn.onclick = saveAsJPG;
-            exportBtn.title = "Скачать JPG";
-            exportBtn.innerHTML = '<i class="fa-solid fa-image"></i>'; 
-        } else {
-            exportBtn.onclick = generatePDF;
-            exportBtn.title = "Скачать PDF";
-            exportBtn.innerHTML = '<i class="fa-solid fa-file-pdf"></i>';
-        }
+        exportBtn.onclick = saveAsJPG;
+        exportBtn.title = "Скачать JPG";
+        exportBtn.innerHTML = '<i class="fa-solid fa-image"></i>'; 
     }
 
     bind('btn-share-img', saveAsJPG); 
