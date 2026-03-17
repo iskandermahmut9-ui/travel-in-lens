@@ -21,44 +21,32 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
 
-            // --- МАГИЯ БЕСШОВНОГО ВХОДА (С ДЕБАГОМ) ---
+            // --- МАГИЯ БЕСШОВНОГО ВХОДА ---
+            // Немного ждем инициализацию Supabase, затем получаем данные из ВК
             setTimeout(async () => {
-                const btn = document.getElementById('btn-pro-auth');
-                if(!btn) return;
-
                 try {
-                    btn.innerText = 'ВК: ПРОВЕРКА...'; // Шаг 1
-
                     const vkUser = await vkBridge.send('VKWebAppGetUserInfo');
-                    
                     if (vkUser && vkUser.id && supabase) {
-                        btn.innerText = 'БАЗА: ВХОД...'; // Шаг 2
-
+                        // Генерируем технические данные для Supabase
                         const vkEmail = `vk_${vkUser.id}@travel-in-lens.ru`;
                         const vkPass = `vk_secure_pass_${vkUser.id}!`;
 
+                        // Пробуем войти
                         let { data, error } = await supabase.auth.signInWithPassword({ email: vkEmail, password: vkPass });
                         
                         if (error) {
-                            btn.innerText = 'БАЗА: РЕГИСТРАЦИЯ...'; // Шаг 3
+                            // Если аккаунта еще нет, регистрируем
                             let { data: regData, error: regError } = await supabase.auth.signUp({ email: vkEmail, password: vkPass });
-                            
-                            if (!regError && regData.user) {
-                                handleLoginSuccess(regData.user);
-                            } else {
-                                alert("Ошибка Supabase: " + regError.message);
-                                btn.innerText = 'PRO ВХОД';
-                            }
+                            if (!regError && regData.user) handleLoginSuccess(regData.user);
                         } else {
+                            // Если всё ок, пускаем
                             handleLoginSuccess(data.user);
                         }
                     }
                 } catch (authErr) {
-                    // Если VK Bridge выдал ошибку (например, открыли не в ВК)
-                    console.log("Ошибка ВК:", authErr);
-                    btn.innerText = 'PRO ВХОД'; 
+                    console.log("Ошибка тихой авторизации ВК", authErr);
                 }
-            }, 1000);
+            }, 1000); 
         }
     } catch (e) {
         console.log("VK Bridge не загружен (работаем вне ВК)", e);
@@ -108,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // --- 4. КНОПКИ И ЛОГИКА АВТО-ОТКРЫТИЯ ---
+    // --- 4. КНОПКИ ---
     const bind = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
 
     bind('btn-pro-auth', () => document.getElementById('auth-modal').style.display='flex');
@@ -139,12 +127,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-share-img', saveAsJPG); 
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
     bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
-
-    // === АВТО-ОТКРЫТИЕ НАСТРОЕК (ПЕРВЫЙ ЗАХОД НА МОБИЛКЕ) ===
-    if (window.innerWidth <= 900 && !localStorage.getItem('planner_onboarding_shown')) {
-        document.getElementById('settings-panel').classList.add('active');
-        localStorage.setItem('planner_onboarding_shown', 'true');
-    }
 
     bind('fab-toggle-view', () => {
         document.body.classList.toggle('show-map');
