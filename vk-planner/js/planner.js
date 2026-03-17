@@ -21,7 +21,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
 
+<<<<<<< HEAD
             // --- МАГИЯ БЕСШОВНОГО ВХОДА (С ДЕБАГОМ) ---
+=======
+          // --- МАГИЯ БЕСШОВНОГО ВХОДА (С ДЕБАГОМ) ---
+>>>>>>> 670afcd24ed2d4b790b66bce0c351c18b4658596
             setTimeout(async () => {
                 const btn = document.getElementById('btn-pro-auth');
                 if(!btn) return;
@@ -58,7 +62,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                     console.log("Ошибка ВК:", authErr);
                     btn.innerText = 'PRO ВХОД'; 
                 }
+<<<<<<< HEAD
             }, 1000);
+=======
+            }, 1000);; 
+>>>>>>> 670afcd24ed2d4b790b66bce0c351c18b4658596
         }
     } catch (e) {
         console.log("VK Bridge не загружен (работаем вне ВК)", e);
