@@ -619,10 +619,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <div style="padding:20px;">
                     <h2 style="margin:0 0 15px;">${name}</h2>
                     <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;">
-                    <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
+                    <table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
                             <th style="padding:10px; text-align:left;">Город</th>
-                            <th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th>
+                            <th style="padding:10px;">Дни</th>
+                            <th style="padding:10px;">Км</th>
+                            <th style="padding:10px;">Бензин</th>
+                            <th style="padding:10px;">Жилье</th>
+                            <th style="padding:10px;">Еда</th>
+                            <th style="padding:10px;">Досуг</th>
+                            <th style="padding:10px;">Сув.</th>
                             <th style="padding:10px;">Итого</th>
                         </tr>
                         ${body.map((row, i) => `
@@ -630,14 +636,24 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 <td style="padding:8px; font-weight:bold;">${row[0]}</td>
                                 <td style="padding:8px; text-align:center;">${row[1]}</td>
                                 <td style="padding:8px; text-align:center;">${row[2]}</td>
-                                <td style="padding:8px; text-align:right;">${row[8]} ₽</td>
+                                <td style="padding:8px; text-align:center;">${row[3] !== '-' ? row[3] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[4] !== '-' ? row[4] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[5] !== '-' ? row[5] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[6] !== '-' ? row[6] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[7] !== '-' ? row[7] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:right; font-weight:bold; color:#FF5722;">${row[8] !== '-' ? row[8] + ' ₽' : '-'}</td>
                             </tr>
                         `).join('')}
                         <tr style="background:#333; color:white; font-weight:bold;">
                             <td style="padding:10px;">ВСЕГО</td>
                             <td style="padding:10px; text-align:center;">${footer[1]}</td>
                             <td style="padding:10px; text-align:center;">${footer[2]}</td>
-                            <td style="padding:10px; text-align:right;">${grandTotal.toLocaleString()} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[3]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[4]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[5]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[6]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[7]} ₽</td>
+                            <td style="padding:10px; text-align:right; color:#FF5722; font-size:14px;">${grandTotal.toLocaleString()} ₽</td>
                         </tr>
                     </table>
                     <div style="margin-top:20px; text-align:right; color:#888; font-size:12px;">travel-in-lens.ru</div>
