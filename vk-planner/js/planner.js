@@ -357,22 +357,72 @@ document.addEventListener('DOMContentLoaded', async function() {
         }));
     }
 
-    async function saveAsNew() {
+   async function saveAsNew() {
         const name = document.getElementById('route-name-inp').value || `Маршрут ${new Date().toLocaleDateString()}`;
         if (!currentUser) return;
-        const { count } = await supabase.from('routes').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
-        if(count >= 20) { alert("Лимит (20) превышен"); return; }
-        const { data, error } = await supabase.from('routes').insert({ user_id: currentUser.id, name, data: getCleanData() }).select();
-        if(!error) {
-            currentRouteId = data[0].id; alert("Сохранено!");
-            document.getElementById('save-modal').style.display='none';
-        } else alert("Ошибка: " + error.message);
+
+        // Находим кнопку и блокируем её
+        const btn = document.getElementById('btn-save-confirm');
+        const originalText = btn.innerText;
+        btn.innerText = 'СОХРАНЕНИЕ...';
+        btn.disabled = true; 
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+
+        try {
+            const { count } = await supabase.from('routes').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+            if(count >= 20) { alert("Лимит (20) превышен"); return; }
+            
+            const { data, error } = await supabase.from('routes').insert({ user_id: currentUser.id, name, data: getCleanData() }).select();
+            
+            if(!error) {
+                currentRouteId = data[0].id; 
+                alert("Сохранено!");
+                document.getElementById('save-modal').style.display='none';
+            } else {
+                alert("Ошибка базы: " + error.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Сетевая ошибка. Проверьте подключение.");
+        } finally {
+            // Обязательно возвращаем кнопку к жизни при любом исходе
+            btn.innerText = originalText;
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
     }
 
     async function saveUpdate() {
         const name = document.getElementById('route-name-inp').value;
-        const { error } = await supabase.from('routes').update({ data: getCleanData(), name }).eq('id', currentRouteId);
-        if(!error) { alert("Обновлено!"); document.getElementById('save-modal').style.display='none'; } else alert(error.message);
+        
+        // Находим кнопку и блокируем её
+        const btn = document.getElementById('btn-save-update');
+        const originalText = btn.innerText;
+        btn.innerText = 'ОБНОВЛЕНИЕ...';
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+
+        try {
+            const { error } = await supabase.from('routes').update({ data: getCleanData(), name }).eq('id', currentRouteId);
+            if(!error) { 
+                alert("Обновлено!"); 
+                document.getElementById('save-modal').style.display='none'; 
+            } else {
+                alert(error.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Сетевая ошибка. Проверьте подключение.");
+        } finally {
+            // Возвращаем кнопку в исходное состояние
+            btn.innerText = originalText;
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
     }
 
     async function openRoutesModal() {
