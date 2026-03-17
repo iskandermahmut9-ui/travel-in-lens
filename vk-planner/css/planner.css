@@ -75,6 +75,9 @@ body {
 .settings-col { background: #181818; padding: 20px; border-right: 1px solid #222; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
 .settings-apply-btn { display: none; }
 
+/* Подсказка, скрыта на десктопе */
+.mobile-onboarding-text { display: none; }
+
 h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent); margin: 0 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
 label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; }
 input { 
@@ -206,10 +209,29 @@ body.vk-dark {
     }
     .settings-col.active { display: flex; }
     
+    /* Стили для онбординг-подсказки на мобильном */
+    .mobile-onboarding-text {
+        display: block;
+        color: #e0e0e0;
+        font-size: 13px;
+        line-height: 1.5;
+        background: rgba(255, 87, 34, 0.15);
+        border: 1px solid rgba(255, 87, 34, 0.3);
+        border-left: 4px solid var(--accent);
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+    body.vk-light .mobile-onboarding-text {
+        color: #333;
+        background: rgba(255, 87, 34, 0.08);
+    }
+    
     .settings-apply-btn { 
-        display: block; width: 100%; padding: 12px; background: #4CAF50; color: white; 
+        display: block; width: 100%; padding: 14px; background: var(--accent); color: white; 
         border: none; border-radius: 10px; font-weight: 800; margin-top: 15px; 
-        text-transform: uppercase; cursor: pointer;
+        text-transform: uppercase; cursor: pointer; font-size: 14px;
+        box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
     }
 
     .view-toggle-fab { display: flex; bottom: 120px; }
