@@ -193,8 +193,8 @@ body.vk-dark {
     .tool-btn { width: 32px; height: 32px; min-width: 32px; min-height: 32px; font-size: 13px; }
     .btn-pro { font-size: 9px; padding: 5px 8px; }
 
-    #btn-mobile-settings,
-    #btn-publish-wall {
+   #btn-mobile-settings,
+    #btn-share-vk {
         display: flex; align-items: center; justify-content: center; width: auto; padding: 0 15px; border-radius: 20px;
         color: var(--accent); border: 1px solid var(--accent); 
         font-weight: 700; font-size: 14px; background: rgba(255, 87, 34, 0.15);
