@@ -880,7 +880,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, 
-                scale: 1.5, 
+                scale: 2, // Увеличиваем масштаб карты для четкости
                 backgroundColor: '#ffffff', 
                 allowTaint: false,
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') 
@@ -892,53 +892,81 @@ document.addEventListener('DOMContentLoaded', async function() {
             const name = document.getElementById('route-name-inp').value || "Маршрут путешествия";
 
             const storyDiv = document.createElement('div');
-            // Меняем position, чтобы мобильные браузеры не обрезали картинку
+            // Переносим за пределы экрана
             storyDiv.style.position = 'absolute'; storyDiv.style.left = '-9999px'; storyDiv.style.top = '0'; 
             storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px'; 
-            storyDiv.style.background = 'linear-gradient(135deg, #1f1f1f, #111111)'; 
-            storyDiv.style.fontFamily = 'Arial, sans-serif'; storyDiv.style.color = '#fff';
             
-            const imgData = mapCanvas.toDataURL('image/jpeg', 0.9);
+            // --- НОВЫЙ СОВРЕМЕННЫЙ ДИЗАЙН (VK STYLE) ---
+            // Используем системный шрифт для максимальной читаемости
+            storyDiv.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+            // Темный угольный фон для лучшего контраста белого текста
+            storyDiv.style.background = '#121212'; 
+            storyDiv.style.color = '#ffffff';
             
+            const imgData = mapCanvas.toDataURL('image/jpeg', 0.85);
+            
+            // Генерация блока расходов (с ₽ и цветом)
             const expensesRow = footer[3] === '-' && footer[4] === '-' && footer[5] === '-' && footer[6] === '-' && footer[7] === '-' ? '' : `
-                    <div style="display: flex; justify-content: space-around; font-size: 28px; background: #252525; padding: 25px; border-radius: 20px; color: #ccc; margin-bottom: 40px;">
-                        ${footer[3] !== '-' ? `<div>⛽ ${footer[3]}</div>` : ''}
-                        ${footer[4] !== '-' ? `<div>🏠 ${footer[4]}</div>` : ''}
-                        ${footer[5] !== '-' ? `<div>🍔 ${footer[5]}</div>` : ''}
-                        ${footer[6] !== '-' ? `<div>🎫 ${footer[6]}</div>` : ''}
-                        ${footer[7] !== '-' ? `<div>🎁 ${footer[7]}</div>` : ''}
+                    <div style="display: flex; justify-content: space-around; font-size: 32px; font-weight: bold; color: #FF5722; margin-bottom: 50px;">
+                        ${footer[3] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">⛽</span> ${footer[3]} ₽</div>` : ''}
+                        ${footer[4] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🏠</span> ${footer[4]} ₽</div>` : ''}
+                        ${footer[5] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🍔</span> ${footer[5]} ₽</div>` : ''}
+                        ${footer[6] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎫</span> ${footer[6]} ₽</div>` : ''}
+                        ${footer[7] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎁</span> ${footer[7]} ₽</div>` : ''}
                     </div>
             `;
+            // Генерация строк остановок (крупные, с иконками и жирным шрифтом)
             const waypointRows = body.length === 0 ? '<div style="text-align:center; color:#888; padding: 20px 0;">Маршрут пока пуст</div>' : body.slice(0, 6).map(row => `
-                            <div style="display: flex; justify-content: space-between; font-size: 32px; padding: 20px 0; border-bottom: 1px solid #2a2a2a;">
-                                <span style="font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 700px;">${row[0]}</span><span style="color: #FF5722; font-weight: bold;">${row[8]} ₽</span>
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 36px; padding: 25px 0; border-bottom: 1px solid #2a2a2a;">
+                                <div style="display: flex; align-items: center; max-width: 75%;">
+                                    <span style="font-size: 28px; color: #FF5722; margin-right: 20px;">
+                                        <i class="fa-solid fa-location-dot"></i>
+                                    </span>
+                                    <span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${row[0]}</span>
+                                </div>
+                                <span style="color: #FF5722; font-weight: 900; font-size: 40px;">${row[8]} ₽</span>
                             </div>
                         `).join('');
 
             storyDiv.innerHTML = `
-                <div style="padding: 70px 50px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start;">
-                    <div style="font-size: 45px; font-weight: 900; color: #FF5722; text-transform: uppercase; margin-bottom: 15px;">${name}</div>
-                    <div style="font-size: 30px; color: #aaa; margin-bottom: 40px;">Бюджет поездки: <span style="color:#fff; font-weight:bold">${grandTotal.toLocaleString()} ₽</span></div>
+                <div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;">
                     
-                    <div style="width: 100%; height: 600px; background: #fff url('${imgData}') no-repeat center center; background-size: contain; border-radius: 40px; border: 4px solid #333; margin-bottom: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.5);"></div>
+                    <div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">
+                        ${name}
+                    </div>
+                    
+                    <div style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; margin-bottom: 60px;">
+                        <span style="font-size: 32px; color: #aaa; margin-right: 15px;">Бюджет</span>
+                        <span style="font-size: 48px; font-weight: 900; color: #FF5722;">${grandTotal.toLocaleString()} ₽</span>
+                    </div>
+                    
+                    <div style="width: 100%; height: 600px; background: #fff url('${imgData}') no-repeat center center; background-size: contain; border-radius: 40px; border: 4px solid #333; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);"></div>
                     
                     ${expensesRow}
 
-                    <div style="background: #1a1a1a; border-radius: 30px; padding: 35px 40px; border: 2px solid #333; margin-bottom: 40px;">
+                    <div style="background: rgba(255, 255, 255, 0.03); border-radius: 30px; padding: 40px 50px; border: 2px solid #333;">
+                        <div style="font-size: 28px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px;">Остановки</div>
                         ${waypointRows}
-                        ${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:20px; font-size: 24px;">и еще ${body.length - 6} точек...</div>` : ''}
+                        ${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:30px; font-size: 28px; font-style: italic;">и еще ${body.length - 6} точек...</div>` : ''}
                     </div>
 
-                    <div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666;">
+                    <div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666; padding-top: 50px;">
                         Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span>
                     </div>
                 </div>
             `;
             document.body.appendChild(storyDiv);
 
-            const finalCanvas = await html2canvas(storyDiv, { scale: 1, backgroundColor: null, windowWidth: 1080, windowHeight: 1920 });
+            const finalCanvas = await html2canvas(storyDiv, { 
+                scale: 1, 
+                backgroundColor: null, 
+                windowWidth: 1080, 
+                windowHeight: 1920,
+                useCORS: true, 
+                logging: false 
+            });
             document.body.removeChild(storyDiv);
-            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.85);
+            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.9); // Высокое качество JPEG
 
             if (window.vkBridge) {
                 await vkBridge.send("VKWebAppShowStoryBox", {
