@@ -849,8 +849,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             btn.innerHTML = oldIcon;
         }
     }
-   async function shareToVKStory() {
-        if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
+  async function shareToVKStory() {
+        if(!currentUser) { showToast("Авторизуйтесь в PRO, чтобы делиться!"); document.getElementById('auth-modal').style.display='flex'; return; }
         const btn = document.getElementById('btn-share-vk');
         if(!btn) return;
         const oldIcon = btn.innerHTML;
@@ -859,75 +859,95 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const mapEl = document.getElementById('map');
             
-            // Показываем карту, если скрыта (для мобилок)
+            // 1. Показываем карту, если скрыта (на мобильном приложении)
             const wasMapHidden = !document.body.classList.contains('show-map');
             if (window.innerWidth <= 900 && wasMapHidden) {
                 document.body.classList.add('show-map');
                 setTimeout(() => map.invalidateSize(), 100);
-                await new Promise(r => setTimeout(r, 1000));
+                await new Promise(r => setTimeout(r, 1000)); // Ждем подгрузки плиток
+            } else {
+                await new Promise(r => setTimeout(r, 500)); 
             }
 
+            // 2. Центрируем маршрут на карте перед снимком
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
                 map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
-                await new Promise(r => setTimeout(r, 800)); 
+                await new Promise(r => setTimeout(r, 1000)); // Ждем окончания анимации
             }
 
+            // 3. Делаем качественный скриншот карты
             const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true, scale: 1.5, backgroundColor: '#ffffff', allowTaint: false,
+                useCORS: true, 
+                scale: 1.5, // Высокое качество для Retina-дисплеев
+                backgroundColor: '#ffffff', 
+                allowTaint: false,
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') 
             });
 
+            // 4. Прячем карту обратно (если она была скрыта)
             if (window.innerWidth <= 900 && wasMapHidden) { document.body.classList.remove('show-map'); }
 
             const { body, footer, grandTotal } = getTableData();
-            const name = document.getElementById('route-name-inp').value || "Мой маршрут";
+            const name = document.getElementById('route-name-inp').value || "Маршрут путешествия";
 
-            // Собираем вертикальную карточку под формат Историй ВК
+            // 5. ГЕНЕРИРУЕМ ЛАЙАУТ ИСТОРИИ (БЕЗ РАСТЯГИВАНИЯ И С ГАРАНТИЕЙ СПИСКА)
             const storyDiv = document.createElement('div');
             storyDiv.style.position = 'fixed'; storyDiv.style.left = '0'; storyDiv.style.top = '0'; storyDiv.style.zIndex = '-999';
-            storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px';
-            storyDiv.style.background = 'linear-gradient(135deg, #1f1f1f, #141414)'; 
+            // Vertical 9:16 aspect ratio ( scaled up for 1080x1920)
+            storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px'; 
+            storyDiv.style.background = 'linear-gradient(135deg, #1f1f1f, #111111)'; 
             storyDiv.style.fontFamily = 'Arial, sans-serif'; storyDiv.style.color = '#fff';
             
-            storyDiv.innerHTML = `
-                <div style="padding: 80px 60px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
-                    <div style="font-size: 50px; font-weight: 900; color: #FF5722; text-transform: uppercase; margin-bottom: 20px;">${name}</div>
-                    <div style="font-size: 35px; color: #aaa; margin-bottom: 40px;">Бюджет поездки: <span style="color:#fff; font-weight:bold">${grandTotal.toLocaleString()} ₽</span></div>
-                    
-                    <div style="width: 100%; height: 650px; background: #fff; border-radius: 40px; border: 4px solid #333; margin-bottom: 40px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                        <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width: 100%; height: 100%; object-fit: contain;">
+            // Преобразуем карту в Base64 для темплейта
+            const imgData = mapCanvas.toDataURL('image/jpeg', 0.9);
+            
+            // Темплейты для строк расходов и городов
+            const expensesRow = footer[3] === '-' && footer[4] === '-' && footer[5] === '-' && footer[6] === '-' && footer[7] === '-' ? '' : `
+                    <div style="display: flex; justify-content: space-around; font-size: 28px; background: #252525; padding: 25px; border-radius: 20px; color: #ccc; margin-bottom: 40px;">
+                        ${footer[3] !== '-' ? `<div>⛽ ${footer[3]}</div>` : ''}
+                        ${footer[4] !== '-' ? `<div>🏠 ${footer[4]}</div>` : ''}
+                        ${footer[5] !== '-' ? `<div>🍔 ${footer[5]}</div>` : ''}
+                        ${footer[6] !== '-' ? `<div>🎫 ${footer[6]}</div>` : ''}
+                        ${footer[7] !== '-' ? `<div>🎁 ${footer[7]}</div>` : ''}
                     </div>
-                    
-                    <div style="display: flex; justify-content: space-between; font-size: 30px; margin-bottom: 40px; background: #252525; padding: 30px; border-radius: 20px; color: #ccc;">
-                        <div>⛽ ${footer[3]}</div>
-                        <div>🏠 ${footer[4]}</div>
-                        <div>🍔 ${footer[5]}</div>
-                        <div>🎫 ${footer[6]}</div>
-                        <div>🎁 ${footer[7]}</div>
-                    </div>
-                    
-                    <div style="background: #1a1a1a; border-radius: 30px; padding: 40px; border: 2px solid #333;">
-                        ${body.slice(0, 5).map(row => `
+            `;
+            const waypointRows = body.length === 0 ? '<div style="text-align:center; color:#888; padding: 20px 0;">Маршрут пока пуст</div>' : body.slice(0, 5).map(row => `
                             <div style="display: flex; justify-content: space-between; font-size: 32px; padding: 20px 0; border-bottom: 1px solid #2a2a2a;">
-                                <span>${row[0]}</span><span style="color: #FF5722; font-weight: bold;">${row[8]} ₽</span>
+                                <span style="font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 700px;">${row[0]}</span><span style="color: #FF5722; font-weight: bold;">${row[8]} ₽</span>
                             </div>
-                        `).join('')}
+                        `).join('');
+
+            storyDiv.innerHTML = `
+                <div style="padding: 70px 50px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start;">
+                    <div style="font-size: 45px; font-weight: 900; color: #FF5722; text-transform: uppercase; margin-bottom: 15px;">${name}</div>
+                    <div style="font-size: 30px; color: #aaa; margin-bottom: 40px;">Бюджет поездки: <span style="color:#fff; font-weight:bold">${grandTotal.toLocaleString()} ₽</span></div>
+                    
+                    <div style="width: 100%; height: 600px; background: #fff; border-radius: 40px; border: 4px solid #333; margin-bottom: 40px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 40px rgba(0,0,0,0.5);">
+                        <img src="${imgData}" style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                    
+                    ${expensesRow}
+
+                    <div style="background: #1a1a1a; border-radius: 30px; padding: 35px 40px; border: 2px solid #333; margin-bottom: 40px;">
+                        ${waypointRows}
                         ${body.length > 5 ? `<div style="text-align:center; color:#888; margin-top:20px; font-size: 24px;">и еще ${body.length - 5} точек...</div>` : ''}
                     </div>
-                    <div style="margin-top: auto; text-align: center; font-size: 35px; font-weight: bold; color: #666;">
+
+                    <div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666;">
                         Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span>
                     </div>
                 </div>
             `;
             document.body.appendChild(storyDiv);
 
-            const finalCanvas = await html2canvas(storyDiv, { scale: 1 });
+            // 6. Делаем снимок готового лайаута (увеличиваем холст, чтобы всё влезло)
+            const finalCanvas = await html2canvas(storyDiv, { scale: 1, backgroundColor: null, scrollX: 0, scrollY: 0, windowWidth: 1080, windowHeight: 1920 });
             document.body.removeChild(storyDiv);
-            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.8);
+            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.85);
 
-            // Отправляем в Истории ВК
+            // 7. Отправляем в Истории ВК
             if (window.vkBridge) {
                 await vkBridge.send("VKWebAppShowStoryBox", {
                     background_type: "image",
@@ -939,7 +959,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 });
             } else {
-                showToast("Публикация историй доступна только внутри приложения ВКонтакте");
+                showToast("Публикация историй доступна только внутри ВК");
             }
 
         } catch (e) {
