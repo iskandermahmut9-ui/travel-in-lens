@@ -169,6 +169,7 @@ body.vk-light .tab { color: #888; }
 body.vk-light .tool-btn { border-color: #ddd; color: #555; background: #fff; }
 body.vk-light .tool-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(255, 87, 34, 0.1); }
 body.vk-light #map { background: #eee; }
+body.vk-light .fd-item span { color: #000; }
 
 body.vk-dark {
     --bg-dark: #19191a; 
