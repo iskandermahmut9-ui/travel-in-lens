@@ -30,13 +30,11 @@
             <button class="tool-btn" id="btn-mobile-settings" title="Настройки"><i class="fa-solid fa-gear"></i></button>
             <button class="tool-btn" id="btn-routes" title="Мои маршруты"><i class="fa-solid fa-folder-open"></i></button>
             <button class="tool-btn" id="btn-save-modal" title="Сохранить"><i class="fa-solid fa-cloud-arrow-up"></i></button>
-            <button class="tool-btn" id="btn-share-img" title="Отправить"><i class="fa-solid fa-share-nodes"></i></button>
-            <button class="tool-btn" id="btn-export" title="Скачать JPG"><i class="fa-solid fa-image"></i></button>
-            <button class="tool-btn" id="btn-logout" title="Выход"><i class="fa-solid fa-sign-out"></i></button>
+            
+            <button class="tool-btn" id="btn-publish-wall" title="Опубликовать в JPG">
+                <i class="fa-solid fa-image"></i>
+            </button>
         </div>
-        <button id="btn-pro-auth" class="btn-pro">PRO ВХОД</button>
-        <a href="https://travel-in-lens.ru/" class="btn-home-style"><i class="fa-solid fa-house"></i><span>НА ГЛАВНУЮ</span></a>
-    </div>
 </header>
 
 <div class="transport-tabs">
@@ -137,7 +135,29 @@
         <div class="close-modal" id="btn-close-routes">Закрыть</div>
     </div>
 </div>
+<div id="toast-container" class="toast-container"></div>
 
+<div id="confirm-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-head">Подтверждение</div>
+        <div id="confirm-text" style="margin-bottom: 20px;"></div>
+        <button class="btn-login" id="btn-confirm-yes">Да</button>
+        <button class="btn-login" id="btn-confirm-no" style="background:#444; margin-top:10px;">Отмена</button>
+    </div>
+</div>
+
+<div id="onboarding-modal" class="modal-overlay">
+    <div class="modal-box" style="text-align: left;">
+        <div class="modal-head" style="text-align: center;">ДОБРО ПОЖАЛОВАТЬ! 🗺️</div>
+        <p style="font-size: 14px; line-height: 1.5; margin-bottom: 10px;"><b>vk-planner</b> — это ваш умный помощник для автопутешествий.</p>
+        <ul style="font-size: 13px; line-height: 1.5; color: #ccc; padding-left: 20px;">
+            <li>Укажите расход топлива и базовые цены ⚙️</li>
+            <li>Добавляйте города, а мы рассчитаем расстояние и бюджет 💰</li>
+            <li>Делитесь красивыми отчетами с друзьями 📸</li>
+        </ul>
+        <button class="btn-login" id="btn-close-onboarding" style="margin-top: 20px;">ПОНЯТНО, В ПУТЬ!</button>
+    </div>
+</div>
 <script src="js/planner.js"></script>
 </body>
 </html>

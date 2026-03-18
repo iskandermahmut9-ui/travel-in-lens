@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                             if (!regError && regData.user) {
                                 handleLoginSuccess(regData.user);
                             } else {
-                                alert("Ошибка Supabase: " + regError.message);
+                                showToast("Ошибка Supabase: " + regError.message);
                                 btn.innerText = 'PRO ВХОД';
                             }
                         } else {
@@ -70,6 +70,27 @@ document.addEventListener('DOMContentLoaded', async function() {
     let waypoints = []; 
     let routeLayer = null; 
     let currentRouteId = null; 
+    // --- КАСТОМНЫЕ УВЕДОМЛЕНИЯ ---
+    window.showToast = function(msg) {
+        const container = document.getElementById('toast-container');
+        if(!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'toast'; toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    };
+
+    window.showCustomConfirm = function(msg, onYes) {
+        document.getElementById('confirm-text').innerText = msg;
+        document.getElementById('confirm-modal').style.display = 'flex';
+        document.getElementById('btn-confirm-yes').onclick = () => {
+            document.getElementById('confirm-modal').style.display = 'none';
+            onYes();
+        };
+        document.getElementById('btn-confirm-no').onclick = () => {
+            document.getElementById('confirm-modal').style.display = 'none';
+        };
+    };
 
     // --- 1. КАРТА ---
     try {
@@ -119,7 +140,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-save-update', saveUpdate);
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
-    bind('btn-logout', async () => { if(supabase) await supabase.auth.signOut(); location.reload(); });
     bind('btn-add-search', addBySearch);
     
     // ЭКСПОРТ (теперь всегда в JPG)
@@ -130,14 +150,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         exportBtn.innerHTML = '<i class="fa-solid fa-image"></i>'; 
     }
 
-    bind('btn-share-img', shareToVKStory); 
+    bind('btn-publish-wall', publishToVKWall);
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
     bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
 
-    // === АВТО-ОТКРЫТИЕ НАСТРОЕК (ПЕРВЫЙ ЗАХОД НА МОБИЛКЕ) ===
-    if (window.innerWidth <= 900 && !localStorage.getItem('planner_onboarding_shown')) {
-        document.getElementById('settings-panel').classList.add('active');
-        localStorage.setItem('planner_onboarding_shown', 'true');
+    // === ОНБОРДИНГ ===
+    if (!localStorage.getItem('planner_onboarding_shown')) {
+        document.getElementById('onboarding-modal').style.display = 'flex';
+        document.getElementById('btn-close-onboarding').onclick = () => {
+            document.getElementById('onboarding-modal').style.display = 'none';
+            if (window.innerWidth <= 900) {
+                document.getElementById('settings-panel').classList.add('active');
+            }
+            localStorage.setItem('planner_onboarding_shown', 'true');
+        };
     }
 
     bind('fab-toggle-view', () => {
@@ -153,8 +179,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const searchInp = document.getElementById('city-search');
     if(searchInp) {
-        let timer;
-        searchInp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => addBySearch(), 1500); });
         searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
     }
 
@@ -201,7 +225,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     async function addBySearch() {
-        const q = document.getElementById('city-search').value;
+        const q = document.getElementById('city-search').value.trim();
+        if(!q) return;
+        document.getElementById('city-search').value = ''; // Очищаем поле сразу!
+        // ... остальной код
         if(!q) return;
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&accept-language=ru`);
@@ -320,7 +347,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if(error) {
             if(confirm("Не удалось войти. Создать новый аккаунт?")) {
                 const { data:d2, error:e2 } = await supabase.auth.signUp({ email:e, password:p });
-                if(!e2) { alert("Регистрация успешна!"); handleLoginSuccess(d2.user); } else alert(e2.message);
+                if(!e2) { showToast("Регистрация успешна!"); handleLoginSuccess(d2.user); } else showToast(e2.message);
             }
         } else handleLoginSuccess(data.user);
     }
@@ -365,20 +392,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         try {
             const { count } = await supabase.from('routes').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
-            if(count >= 20) { alert("Лимит (20) превышен"); return; }
+            if(count >= 20) { showToast("Лимит (20) превышен"); return; }
             
             const { data, error } = await supabase.from('routes').insert({ user_id: currentUser.id, name, data: getCleanData() }).select();
             
             if(!error) {
                 currentRouteId = data[0].id; 
-                alert("Сохранено!");
+                showToast("Сохранено!");
                 document.getElementById('save-modal').style.display='none';
             } else {
-                alert("Ошибка базы: " + error.message);
+                showToast("Ошибка базы: " + error.message);
             }
         } catch (e) {
             console.error(e);
-            alert("Сетевая ошибка. Проверьте подключение.");
+            showToast("Сетевая ошибка. Проверьте подключение.");
         } finally {
             // Обязательно возвращаем кнопку к жизни при любом исходе
             btn.innerText = originalText;
@@ -402,14 +429,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const { error } = await supabase.from('routes').update({ data: getCleanData(), name }).eq('id', currentRouteId);
             if(!error) { 
-                alert("Обновлено!"); 
+                showToast("Обновлено!"); 
                 document.getElementById('save-modal').style.display='none'; 
             } else {
-                alert(error.message);
+                showToast(error.message);
             }
         } catch (e) {
             console.error(e);
-            alert("Сетевая ошибка. Проверьте подключение.");
+            showToast("Сетевая ошибка. Проверьте подключение.");
         } finally {
             // Возвращаем кнопку в исходное состояние
             btn.innerText = originalText;
@@ -441,7 +468,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     async function deleteRoute(id) {
-        if(confirm("Удалить?")) { await supabase.from('routes').delete().eq('id', id); openRoutesModal(); }
+        showCustomConfirm("Удалить этот маршрут навсегда?", async () => {
+            await supabase.from('routes').delete().eq('id', id); 
+            openRoutesModal();
+        });
     }
 
     function loadRoute(r) {
@@ -561,7 +591,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             doc.text(`Бюджет: ${grandTotal.toLocaleString()} RUB`, pageW - margin, finalY, { align: 'right' });
             
             doc.save('travel-in-lens.ru.pdf');
-        } catch(e) { console.error(e); alert("Ошибка PDF: "+e.message); }
+        } catch(e) { console.error(e); showToast("Ошибка PDF: "+e.message); }
         finally { btn.innerHTML = oldT; }
     }
     async function saveAsJPG() {
@@ -667,7 +697,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const fileName = "travel-in-lens.ru.jpg";
 
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) { alert("Ошибка: Память переполнена"); return; }
+                if(!blob) { showToast("Ошибка: Память переполнена"); return; }
                 const file = new File([blob], fileName, { type: "image/jpeg" });
 
                 if (isMobileOS) {
@@ -694,7 +724,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }, 'image/jpeg', 0.85);
 
         } catch (e) {
-            alert("Ошибка сохранения: " + e.message);
+            showToast("Ошибка сохранения: " + e.message);
         } finally {
             btn.innerHTML = oldIcon;
         }
@@ -805,12 +835,126 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 });
             } else {
-                alert("Публикация историй доступна только внутри приложения ВКонтакте");
+                showToast("Публикация историй доступна только внутри приложения ВКонтакте");
             }
 
         } catch (e) {
             console.error(e);
-            alert("Ошибка создания истории");
+            showToast("Ошибка создания истории");
+        } finally {
+            btn.innerHTML = oldIcon;
+        }
+    }
+    async function publishToVKWall() {
+        if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
+        const btn = document.getElementById('btn-publish-wall');
+        if(!btn) return;
+        const oldIcon = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        try {
+            const mapEl = document.getElementById('map');
+            
+            // Показываем карту, если она скрыта (на мобильном)
+            const wasMapHidden = !document.body.classList.contains('show-map');
+            if (window.innerWidth <= 900 && wasMapHidden) {
+                document.body.classList.add('show-map');
+                setTimeout(() => map.invalidateSize(), 100);
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            // Центрируем карту
+            if (waypoints.length > 0) {
+                const group = new L.featureGroup(waypoints.map(p => p.marker));
+                if (routeLayer) group.addLayer(routeLayer);
+                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
+                await new Promise(r => setTimeout(r, 800)); 
+            }
+
+            // Делаем скриншот карты
+            const mapCanvas = await html2canvas(mapEl, { 
+                useCORS: true, scale: 1.5, backgroundColor: '#ffffff', allowTaint: false,
+                ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
+            });
+
+            // Прячем карту обратно
+            if (window.innerWidth <= 900 && wasMapHidden) {
+                document.body.classList.remove('show-map');
+            }
+
+            const { body, footer, grandTotal } = getTableData();
+            const name = document.getElementById('route-name-inp').value || "Маршрут путешествия";
+
+            // Собираем длинный детализированный отчет
+            const reportDiv = document.createElement('div');
+            reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
+            reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif'; reportDiv.style.color = '#000';
+            
+            reportDiv.innerHTML = `
+                <div style="padding:20px;">
+                    <div style="font-size: 24px; font-weight: 800; color: #FF5722; text-transform: uppercase; margin-bottom: 15px;">${name}</div>
+                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;">
+                    
+                    <table style="width:100%; border-collapse: collapse; font-size:12px; color:#000; table-layout: fixed;">
+                        <tr style="background:#FF5722; color:white; font-weight: bold;">
+                            <th style="padding:10px; text-align:left; width: 30%;">Город</th>
+                            <th style="padding:10px; width: 8%;">Дни</th>
+                            <th style="padding:10px; width: 10%;">Км</th>
+                            <th style="padding:10px; width: 11%;">Бензин</th>
+                            <th style="padding:10px; width: 11%;">Жилье</th>
+                            <th style="padding:10px; width: 10%;">Еда</th>
+                            <th style="padding:10px; width: 10%;">Досуг</th>
+                            <th style="padding:10px; width: 10%;">Сув.</th>
+                        </tr>
+                        ${body.map((row, i) => `
+                            <tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;">
+                                <td style="padding:8px; font-weight:bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${row[0]}</td>
+                                <td style="padding:8px; text-align:center;">${row[1]}</td>
+                                <td style="padding:8px; text-align:center;">${row[2]}</td>
+                                <td style="padding:8px; text-align:center; color:#FF5722; font-weight: bold;">${row[3]} ₽</td>
+                                <td style="padding:8px; text-align:center;">${row[4] !== '-' ? row[4] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[5] !== '-' ? row[5] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[6] !== '-' ? row[6] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[7] !== '-' ? row[7] + ' ₽' : '-'}</td>
+                            </tr>
+                        `).join('')}
+                        <tr style="background:#333; color:white; font-weight:bold; font-size: 13px;">
+                            <td style="padding:10px;">ВСЕГО</td>
+                            <td style="padding:10px; text-align:center;">${footer[1]}</td>
+                            <td style="padding:10px; text-align:center;">${footer[2]} км</td>
+                            <td style="padding:10px; text-align:center;">${footer[3]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[4]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[5]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[6]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[7]} ₽</td>
+                        </tr>
+                    </table>
+                    
+                    <div style="margin-top:20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-size: 12px; color: #888;">travel-in-lens.ru</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #FF5722;">ИТОГО: ${grandTotal.toLocaleString()} RUB</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(reportDiv);
+
+            const finalCanvas = await html2canvas(reportDiv, { scale: 1 });
+            document.body.removeChild(reportDiv);
+            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.8);
+
+            // Публикуем на стене ВК
+            if (window.vkBridge) {
+                await vkBridge.send("VKWebAppShowWallPostBox", {
+                    message: `Я спланировал автопутешествие: ${name}.\nПримерный бюджет: ${grandTotal.toLocaleString()} ₽.\nПосмотри полную детализацию на картинке!\nСобери свой маршрут в приложении: vk.com/app54486894`,
+                    attachments: base64Img
+                });
+            } else {
+                showToast("Публикация доступна только внутри ВК");
+            }
+
+        } catch (e) {
+            console.error(e);
+            showToast("Ошибка создания отчета");
         } finally {
             btn.innerHTML = oldIcon;
         }

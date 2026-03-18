@@ -193,7 +193,13 @@ body.vk-dark {
     .tool-btn { width: 32px; height: 32px; min-width: 32px; min-height: 32px; font-size: 13px; }
     .btn-pro { font-size: 9px; padding: 5px 8px; }
 
-    #btn-mobile-settings { display: flex; align-items: center; justify-content: center; width: auto; padding: 0 10px; height: 32px; }
+    #btn-mobile-settings,
+    #btn-publish-wall {
+        display: flex; align-items: center; justify-content: center; width: auto; padding: 0 15px; border-radius: 20px;
+        color: var(--accent); border: 1px solid var(--accent); 
+        font-weight: 700; font-size: 14px; background: rgba(255, 87, 34, 0.15);
+        height: 32px;
+    }
 
     .main-container { display: block; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
     .sidebar { width: 100%; min-width: 0; height: 100%; display: block; overflow: hidden; border: none; }
@@ -244,3 +250,8 @@ body.vk-dark {
 /* Поддержка светлой темы для списка */
 body.vk-light .routes-list { background: #f9f9f9; border-color: #ddd; }
 body.vk-light .route-item { border-bottom: 1px solid #eee; }
+/* --- Кастомные Уведомления (Toast) --- */
+.toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: var(--accent); color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); animation: fadein 0.3s, fadeout 0.3s 2.7s; text-align: center; }
+@keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeout { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
