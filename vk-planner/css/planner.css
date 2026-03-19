@@ -115,7 +115,7 @@ input {
 .stage-summary { margin-top: 6px; text-align: right; padding-top: 4px; }
 .stage-total-line { color: var(--accent); font-weight: 800; font-size: 14px; }
 
-.footer-total { background: #181818; border-top: 1px solid #333; padding: 15px 20px; position: absolute; bottom: 0; width: 100%; z-index: 20; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; max-height: 150px; overflow-y: auto; left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 15px); }
+.footer-total { background: #181818; border-top: 1px solid #333; padding: 15px 20px; position: absolute; bottom: 0; width: 100%; z-index: 20; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; max-height: 220px; overflow-y: auto; left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 15px); }
 .footer-main { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .f-sum { font-size: 24px; color: var(--accent); font-weight: 900; }
 .footer-details-row { display: flex; flex-wrap: wrap; gap: 15px; font-size: 12px; color: #888; margin-bottom: 10px; }
@@ -256,3 +256,29 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
 .toast { background: var(--accent); color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); animation: fadein 0.3s, fadeout 0.3s 2.7s; text-align: center; }
 @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeout { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
+/* --- КНОПКИ ПРЕДСТАВИТЕЛЬСТВА (СООБЩЕСТВО И РАЗРАБОТЧИК) --- */
+.vk-promo-links {
+    display: flex; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #333;
+}
+.btn-vk-group, .btn-vk-dev {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px; border-radius: 12px; text-decoration: none; font-size: 12px; font-weight: 800;
+    transition: 0.2s; text-transform: uppercase;
+}
+/* Синяя кнопка ВК для группы (привлекает максимум внимания) */
+.btn-vk-group { 
+    background: #0077FF; color: #fff; 
+    box-shadow: 0 4px 15px rgba(0, 119, 255, 0.25); 
+}
+.btn-vk-group:hover { background: #0066CC; transform: translateY(-2px); }
+
+/* Темная контурная кнопка для связи с тобой */
+.btn-vk-dev { 
+    background: rgba(255,255,255,0.05); color: #aaa; border: 1px solid #333; 
+}
+.btn-vk-dev:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* Поддержка светлой темы для новых кнопок */
+body.vk-light .vk-promo-links { border-top-color: #ddd; }
+body.vk-light .btn-vk-dev { background: #f5f5f5; border-color: #ddd; color: #555; }
+body.vk-light .btn-vk-dev:hover { background: #e0e0e0; color: #000; }
