@@ -91,6 +91,20 @@ document.addEventListener('DOMContentLoaded', async function() {
             document.getElementById('confirm-modal').style.display = 'none';
         };
     };
+    // --- РЕКЛАМА ВКОНТАКТЕ ---
+    async function showVKAd() {
+        if (window.vkBridge) {
+            try {
+                // Запрашиваем полноэкранную (межстраничную) рекламу
+                await vkBridge.send("VKWebAppShowNativeAds", { ad_format: "interstitial" });
+                console.log("Реклама успешно показана");
+            } catch (e) {
+                // Ошибка выскочит, если у ВК сейчас нет для нас рекламного ролика 
+                // или включен AdBlock. Мы просто игнорируем её, чтобы приложение не сломалось.
+                console.log("Реклама не показана:", e);
+            }
+        }
+    }
 
     // --- 1. КАРТА ---
     try {
@@ -602,11 +616,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         finally { btn.innerHTML = oldT; }
     }
     async function saveAsJPG() {
+        // --- ДОБАВЛЯЕМ ВЫЗОВ РЕКЛАМЫ ЗДЕСЬ ---
+        await showVKAd(); 
+        
         const btn = document.activeElement; 
         const oldIcon = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
+            // ... дальше идет твой старый код функции
             const ua = navigator.userAgent;
             const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
             
@@ -767,11 +785,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.body.appendChild(overlay);
     }
     async function shareToVKStory() {
-        const btn = document.getElementById('btn-share-img');
+        if(!currentUser) { showToast("Авторизуйтесь в PRO, чтобы делиться!"); document.getElementById('auth-modal').style.display='flex'; return; }
+        
+        // --- ДОБАВЛЯЕМ ВЫЗОВ РЕКЛАМЫ ЗДЕСЬ ---
+        await showVKAd();
+
+        const btn = document.getElementById('btn-share-vk');
+        if(!btn) return;
         const oldIcon = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
+            // ... дальше идет твой старый код генерации картинки
             const mapEl = document.getElementById('map');
             
             // Показываем карту, если скрыта (для мобилок)
