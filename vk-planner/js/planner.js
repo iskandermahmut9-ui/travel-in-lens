@@ -616,10 +616,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         finally { btn.innerHTML = oldT; }
     }
     async function saveAsJPG() {
-        // --- ДОБАВЛЯЕМ ВЫЗОВ РЕКЛАМЫ ЗДЕСЬ ---
-        await showVKAd(); 
+        // Показываем рекламу
+        await showVKAd();
         
-        const btn = document.activeElement; 
+        // Даем интерфейсу полсекунды прийти в себя после закрытия рекламы
+        await new Promise(r => setTimeout(r, 500));
+
+        // Ищем кнопку строго по ID, а не по фокусу!
+        const btn = document.getElementById('btn-export'); 
+        if (!btn) return;
         const oldIcon = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
@@ -787,8 +792,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function shareToVKStory() {
         if(!currentUser) { showToast("Авторизуйтесь в PRO, чтобы делиться!"); document.getElementById('auth-modal').style.display='flex'; return; }
         
-        // --- ДОБАВЛЯЕМ ВЫЗОВ РЕКЛАМЫ ЗДЕСЬ ---
+        // Показываем рекламу
         await showVKAd();
+        
+        // Пауза, чтобы оверлей рекламы точно исчез до скриншота
+        await new Promise(r => setTimeout(r, 500));
 
         const btn = document.getElementById('btn-share-vk');
         if(!btn) return;
