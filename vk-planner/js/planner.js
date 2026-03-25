@@ -815,100 +815,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function shareToVKStory() {
         if(!currentUser) { showToast("Авторизуйтесь в PRO, чтобы делиться!"); document.getElementById('auth-modal').style.display='flex'; return; }
         
-        // --- ВОЗВРАЩАЕМ РЕКЛАМУ И ПАУЗУ СЮДА ---
+        // Вызов рекламы и пауза
         await showVKAd();
         await new Promise(r => setTimeout(r, 500));
-        // ---------------------------------------
 
-        const btn = document.getElementById('btn-share-vk');
-        if(!btn) return;
-        const oldIcon = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-        try {
-            // ... дальше идет твой стандартный код функции
-            const mapEl = document.getElementById('map');
-            
-            // Показываем карту, если скрыта (для мобилок)
-            const wasMapHidden = !document.body.classList.contains('show-map');
-            if (window.innerWidth <= 900 && wasMapHidden) {
-                document.body.classList.add('show-map');
-                setTimeout(() => map.invalidateSize(), 100);
-                await new Promise(r => setTimeout(r, 1000));
-            } else { await new Promise(r => setTimeout(r, 800)); }
-
-            if (waypoints.length > 0) {
-                const group = new L.featureGroup(waypoints.map(p => p.marker));
-                if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
-                await new Promise(r => setTimeout(r, 500)); 
-            }
-
-            // Делаем скриншот карты
-            const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 1.5, backgroundColor: '#ffffff', ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') });
-
-            if (window.innerWidth <= 900 && wasMapHidden) { document.body.classList.remove('show-map'); }
-
-            const { body, footer, grandTotal } = getTableData();
-            const name = document.getElementById('route-name-inp').value || "Мой маршрут";
-
-            // Собираем вертикальную карточку специально под формат Историй ВК
-            const storyDiv = document.createElement('div');
-            storyDiv.style.position = 'fixed'; storyDiv.style.left = '0'; storyDiv.style.top = '0'; storyDiv.style.zIndex = '-999';
-            storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px'; // Формат истории
-            storyDiv.style.background = 'linear-gradient(135deg, #1f1f1f, #141414)'; 
-            storyDiv.style.fontFamily = 'Arial, sans-serif'; storyDiv.style.color = '#fff';
-            
-            storyDiv.innerHTML = `
-                <div style="padding: 80px 60px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
-                    <div style="font-size: 50px; font-weight: 900; color: #FF5722; text-transform: uppercase; margin-bottom: 20px;">${name}</div>
-                    <div style="font-size: 30px; color: #aaa; margin-bottom: 50px;">Бюджет поездки: <span style="color:#fff; font-weight:bold">${grandTotal.toLocaleString()} ₽</span></div>
-                    
-                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width: 100%; height: 700px; object-fit: cover; border-radius: 40px; border: 4px solid #333; margin-bottom: 50px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
-                    
-                    <div style="background: #252525; border-radius: 30px; padding: 40px;">
-                        ${body.slice(0, 5).map(row => `
-                            <div style="display: flex; justify-content: space-between; font-size: 32px; padding: 20px 0; border-bottom: 1px solid #333;">
-                                <span>${row[0]}</span><span style="color: #FF5722; font-weight: bold;">${row[8]} ₽</span>
-                            </div>
-                        `).join('')}
-                        ${body.length > 5 ? `<div style="text-align:center; color:#888; margin-top:20px; font-size: 24px;">и еще ${body.length - 5} точек...</div>` : ''}
-                    </div>
-                    <div style="margin-top: auto; text-align: center; font-size: 35px; font-weight: bold; color: #666;">
-                        Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(storyDiv);
-
-            const finalCanvas = await html2canvas(storyDiv, { scale: 1 });
-            document.body.removeChild(storyDiv);
-            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.8);
-
-            // Отправляем сгенерированную картинку в Истории ВК
-            if (window.vkBridge) {
-                await vkBridge.send("VKWebAppShowStoryBox", {
-                    background_type: "image",
-                    blob: base64Img,
-                    attachment: {
-                        text: "open",
-                        type: "url",
-                        url: "https://vk.com/app54486894" // Ссылка с кнопкой на твое приложение
-                    }
-                });
-            } else {
-                showToast("Публикация историй доступна только внутри приложения ВКонтакте");
-            }
-
-        } catch (e) {
-            console.error(e);
-            showToast("Ошибка создания истории");
-        } finally {
-            btn.innerHTML = oldIcon;
-        }
-    }
- async function shareToVKStory() {
-        if(!currentUser) { showToast("Авторизуйтесь в PRO, чтобы делиться!"); document.getElementById('auth-modal').style.display='flex'; return; }
         const btn = document.getElementById('btn-share-vk');
         if(!btn) return;
         const oldIcon = btn.innerHTML;
@@ -934,10 +844,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true, 
-                scale: 2, // Увеличиваем масштаб карты для четкости
-                backgroundColor: '#ffffff', 
-                allowTaint: false,
+                useCORS: true, scale: 2, backgroundColor: '#ffffff', allowTaint: false,
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') 
             });
 
@@ -947,20 +854,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             const name = document.getElementById('route-name-inp').value || "Маршрут путешествия";
 
             const storyDiv = document.createElement('div');
-            // Переносим за пределы экрана
             storyDiv.style.position = 'absolute'; storyDiv.style.left = '-9999px'; storyDiv.style.top = '0'; 
             storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px'; 
-            
-            // --- НОВЫЙ СОВРЕМЕННЫЙ ДИЗАЙН (VK STYLE) ---
-            // Используем системный шрифт для максимальной читаемости
             storyDiv.style.fontFamily = 'system-ui, -apple-system, sans-serif';
-            // Темный угольный фон для лучшего контраста белого текста
             storyDiv.style.background = '#121212'; 
             storyDiv.style.color = '#ffffff';
             
             const imgData = mapCanvas.toDataURL('image/jpeg', 0.85);
             
-            // Генерация блока расходов (с ₽ и цветом)
             const expensesRow = footer[3] === '-' && footer[4] === '-' && footer[5] === '-' && footer[6] === '-' && footer[7] === '-' ? '' : `
                     <div style="display: flex; justify-content: space-around; font-size: 32px; font-weight: bold; color: #FF5722; margin-bottom: 50px;">
                         ${footer[3] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">⛽</span> ${footer[3]} ₽</div>` : ''}
@@ -970,7 +871,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                         ${footer[7] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎁</span> ${footer[7]} ₽</div>` : ''}
                     </div>
             `;
-            // Генерация строк остановок (крупные, с иконками и жирным шрифтом)
             const waypointRows = body.length === 0 ? '<div style="text-align:center; color:#888; padding: 20px 0;">Маршрут пока пуст</div>' : body.slice(0, 6).map(row => `
                             <div style="display: flex; align-items: center; justify-content: space-between; font-size: 36px; padding: 25px 0; border-bottom: 1px solid #2a2a2a;">
                                 <div style="display: flex; align-items: center; max-width: 75%;">
@@ -985,26 +885,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             storyDiv.innerHTML = `
                 <div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;">
-                    
-                    <div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">
-                        ${name}
-                    </div>
-                    
+                    <div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">${name}</div>
                     <div style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; margin-bottom: 60px;">
                         <span style="font-size: 32px; color: #aaa; margin-right: 15px;">Бюджет</span>
                         <span style="font-size: 48px; font-weight: 900; color: #FF5722;">${grandTotal.toLocaleString()} ₽</span>
                     </div>
-                    
                     <div style="width: 100%; height: 600px; background: #fff url('${imgData}') no-repeat center center; background-size: contain; border-radius: 40px; border: 4px solid #333; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);"></div>
-                    
                     ${expensesRow}
-
                     <div style="background: rgba(255, 255, 255, 0.03); border-radius: 30px; padding: 40px 50px; border: 2px solid #333;">
                         <div style="font-size: 28px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px;">Остановки</div>
                         ${waypointRows}
                         ${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:30px; font-size: 28px; font-style: italic;">и еще ${body.length - 6} точек...</div>` : ''}
                     </div>
-
                     <div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666; padding-top: 50px;">
                         Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span>
                     </div>
@@ -1012,26 +904,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             `;
             document.body.appendChild(storyDiv);
 
-            const finalCanvas = await html2canvas(storyDiv, { 
-                scale: 1, 
-                backgroundColor: null, 
-                windowWidth: 1080, 
-                windowHeight: 1920,
-                useCORS: true, 
-                logging: false 
-            });
+            const finalCanvas = await html2canvas(storyDiv, { scale: 1, backgroundColor: null, windowWidth: 1080, windowHeight: 1920, useCORS: true, logging: false });
             document.body.removeChild(storyDiv);
-            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.9); // Высокое качество JPEG
+            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.9);
 
             if (window.vkBridge) {
                 await vkBridge.send("VKWebAppShowStoryBox", {
-                    background_type: "image",
-                    blob: base64Img,
+                    background_type: "image", blob: base64Img,
                     attachment: { text: "open", type: "url", url: "https://vk.com/app54486894" }
                 });
-            } else {
-                showToast("Публикация историй доступна только внутри ВК");
-            }
+            } else { showToast("Публикация доступна только внутри ВК"); }
 
         } catch (e) {
             console.error(e);

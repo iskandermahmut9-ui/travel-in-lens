@@ -242,8 +242,9 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
     box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); transition: 0.2s;
 }
 .settings-apply-btn:hover { background: #e64a19; }
+
 /* =========================================
-   МОБИЛЬНАЯ ВЕРСИЯ (ЕДИНСТВЕННЫЙ БЛОК!)
+   МОБИЛЬНАЯ ВЕРСИЯ (ИДЕАЛЬНЫЙ ФИКС КАРТЫ)
    ========================================= */
 @media (max-width: 900px) {
     .header { flex-direction: column; height: auto; padding: calc(env(safe-area-inset-top) + 5px) 10px 5px 10px; background: var(--header-bg) !important; gap: 5px; }
@@ -255,28 +256,26 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
 
     #btn-mobile-settings, #btn-export, #btn-share-vk { display: flex; align-items: center; justify-content: center; width: auto; padding: 0 15px; border-radius: 20px; color: var(--accent); border: 1px solid var(--accent); font-weight: 700; font-size: 14px; background: rgba(255, 87, 34, 0.15); height: 32px; }
 
-    /* Логика умных кнопок для телефона */
     .promo-desktop { display: none !important; }
     .promo-mobile { display: flex !important; }
     div.promo-mobile { display: block !important; }
     .vk-promo-links { margin-top: 0; padding-top: 10px; }
     .btn-vk-group, .btn-vk-dev { padding: 12px; font-size: 12px; border-radius: 12px; }
 
-    /* ЖЕСТКИЙ ФИКС КАРТЫ (БЕЗ ТРАНСФОРМАЦИЙ) */
-    .main-container { display: flex; flex-direction: column; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
-    
+    /* ФИКС КАРТЫ: делаем её невидимой, а не скрытой */
+    .main-container { display: block; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
     .sidebar { width: 100%; min-width: 0; height: 100%; display: block; border: none; }
     
-    #map { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; z-index: 1000; display: none !important; }
+    #map { 
+        width: 100% !important; height: 100% !important; 
+        position: absolute !important; top: 0; left: 0; 
+        z-index: -1 !important; opacity: 0 !important; pointer-events: none !important;
+        display: block !important; transition: opacity 0.2s;
+    }
     
-    /* Логика переключения */
-    body.show-map #map { display: block !important; }
+    body.show-map #map { z-index: 1000 !important; opacity: 1 !important; pointer-events: auto !important; }
     body.show-map .sidebar { display: none !important; }
 
-    .route-col { height: 100%; width: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 160px) !important; box-sizing: border-box; }
-    .route-list-scroll { padding-bottom: 200px !important; overflow-y: auto; max-height: 100%; }} 
-
-    .sidebar { width: 100%; min-width: 0; height: 100%; display: block; overflow: hidden; border: none; }
     .route-col { height: 100%; width: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 160px) !important; box-sizing: border-box; }
     .route-list-scroll { padding-bottom: 200px !important; overflow-y: auto; max-height: 100%; }
 
@@ -290,6 +289,4 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
     
     .mobile-onboarding-text { display: block; color: #e0e0e0; font-size: 13px; line-height: 1.5; background: rgba(255, 87, 34, 0.15); border: 1px solid rgba(255, 87, 34, 0.3); border-left: 4px solid var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
     body.vk-light .mobile-onboarding-text { color: #333; background: rgba(255, 87, 34, 0.08); }
-    .settings-apply-btn { display: block; width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 800; margin-top: 15px; text-transform: uppercase; cursor: pointer; font-size: 14px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); }
-    .btn-add, .btn-del { min-width: 36px; min-height: 36px; font-size: 16px; }
 }
