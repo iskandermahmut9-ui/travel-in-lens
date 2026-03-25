@@ -368,9 +368,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             setText(`st-${p.id}`, Math.round(sum).toLocaleString());
         });
 
-        const nStr = getNoun(N, 'ночь', 'ночи', 'ночей');
         setText('total-sum', Math.round(T).toLocaleString() + ' ₽');
-        setText('total-km', `${Km.toFixed(1)} км (🌙 ${N} ${nStr})`);
+        setText('total-km', `${Km.toFixed(1)} км (🌙 ${N})`);
         setText('s-fuel', Math.round(C.f)); setText('s-stay', Math.round(C.s));
         setText('s-food', Math.round(C.fo)); setText('s-exc', Math.round(C.e)); setText('s-souv', Math.round(C.sv));
     }
