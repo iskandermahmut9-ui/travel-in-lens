@@ -43,9 +43,22 @@ body {
 /* Компактные настройки для ПК */
 .settings-col { background: #181818; padding: 10px 15px; border-right: 1px solid #222; overflow-y: auto; display: flex; flex-direction: column; box-sizing: border-box; }
 .settings-col h3 { font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--accent); margin: 10px 0 5px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
+/* Базовые стили для всех инпутов и лейблов (возвращаем красоту в карточки маршрута) */
+label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; }
+input { 
+    width: 100%; padding: 6px 8px; font-size: 13px; font-weight: 700; 
+    border: 1px solid #333; border-radius: 6px; background: #252525; color: #fff; 
+    box-sizing: border-box; outline: none; 
+}
+
+/* Сброс стилей для прозрачного заголовка города */
+.city-name-input { background: transparent !important; border: none !important; padding: 0 !important; font-size: 16px !important; }
+body.vk-light .city-name-input { color: #000 !important; }
+
+/* Компактные отступы только для левой панели настроек */
 .input-group { margin-bottom: 4px; }
-.input-group label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); margin-bottom: 2px; text-transform: uppercase; }
-.input-group input { width: 100%; padding: 4px 8px; font-size: 12px; font-weight: 700; border: 1px solid #333; border-radius: 6px; background: #252525; color: #fff; box-sizing: border-box; outline: none; height: 28px; }
+.input-group label { margin-bottom: 2px; }
+.input-group input { padding: 4px 8px; font-size: 12px; height: 28px; }
 
 .settings-apply-btn { 
     display: block !important; width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 8px; 
