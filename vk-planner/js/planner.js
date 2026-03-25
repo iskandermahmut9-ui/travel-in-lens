@@ -195,6 +195,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         };
     }
 
+    // === Опечатка в ID фаба! ===
+    // Вместо 'fab-toggle_view' должно быть 'fab-toggle-view' (как в CSS и HTML)
     bind('fab-toggle-view', () => {
         const isMapShown = document.body.classList.contains('show-map');
         const fabIcon = document.querySelector('#fab-toggle-view i');
@@ -205,10 +207,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             document.body.classList.add('show-map');
             if(fabIcon) { fabIcon.classList.remove('fa-map'); fabIcon.classList.add('fa-list'); }
-            setTimeout(() => { if(map) map.invalidateSize(); }, 100);
+            // Это жесткий фикс для Leaflet: он должен обновить размер, когда блок стал display:block
+            setTimeout(() => { if(map) map.invalidateSize(); }, 200);
         }
     });
-
     const searchInp = document.getElementById('city-search');
     if(searchInp) {
         searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });

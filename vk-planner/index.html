@@ -84,11 +84,11 @@
                 <div id="list-content"></div>
             </div>
             
-            <div class="footer-total">
+           <div class="footer-total">
                 <div class="footer-main">
                     <div style="display:flex; align-items:baseline;">
                         <span class="f-label">ИТОГО:</span>
-                        <span class="f-km" id="total-km">0 км</span>
+                        <span class="f-km" id="total-km">0 км (🌙 0)</span>
                     </div>
                     <div class="f-sum" id="total-sum">0 ₽</div>
                 </div>
@@ -100,77 +100,14 @@
                     <div class="fd-item">🎁 <span id="s-souv">0</span></div>
                 </div>
                 
-                <div class="vk-promo-links promo-mobile">
-                    <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-group">
-                        <i class="fa-brands fa-vk" style="font-size: 16px;"></i> Сообщество
+                <div class="vk-links-mobile">
+                    <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-min btn-vk-min-group">
+                        <i class="fa-brands fa-vk"></i> Сообщество
                     </a>
-                    <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-dev">
+                    <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-min btn-vk-min-dev">
                         <i class="fa-solid fa-code"></i> Разработчик
                     </a>
                 </div>
-                <div class="promo-mobile" style="text-align: center; font-size: 10px; color: #555; margin-top: 8px; width: 100%; justify-content: center;">© 2026 by AL☰X</div>
+                <div class="promo-mobile" style="text-align: center; font-size: 9px; color: #555; margin-top: 5px; width: 100%; justify-content: center; display: none;">© 2026 by AL☰X</div>
             </div>
         </div>
-    </div>
-    <div id="map"></div>
-</div>
-
-<button class="view-toggle-fab" id="fab-toggle-view" title="Переключить вид">
-    <i class="fa-solid fa-map"></i>
-</button>
-
-<div id="auth-modal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-head">ВХОД / РЕГИСТРАЦИЯ</div>
-        <input type="email" class="modal-inp" id="auth-email" placeholder="Email">
-        <input type="password" class="modal-inp" id="auth-pass" placeholder="Пароль">
-        <button class="btn-login" id="btn-login-action">ПРОДОЛЖИТЬ</button>
-        <div class="close-modal" id="btn-close-auth">Отмена</div>
-    </div>
-</div>
-
-<div id="save-modal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-head">СОХРАНИТЬ МАРШРУТ</div>
-        <input type="text" class="modal-inp" id="route-name-inp" placeholder="Название маршрута">
-        <button class="btn-login" id="btn-save-confirm">СОХРАНИТЬ НОВЫЙ</button>
-        <button class="btn-login" id="btn-save-update" style="background:#444; margin-top:10px; display:none">ПЕРЕЗАПИСАТЬ</button>
-        <div class="close-modal" onclick="document.getElementById('save-modal').style.display='none'">Отмена</div>
-    </div>
-</div>
-
-<div id="routes-modal" class="modal-overlay">
-    <div class="modal-box" style="width: 500px;">
-        <div class="modal-head">МОИ МАРШРУТЫ</div>
-        <div class="routes-list" id="routes-list-container">
-            <div style="padding:20px; color:#666">Загрузка...</div>
-        </div>
-        <div class="close-modal" id="btn-close-routes">Закрыть</div>
-    </div>
-</div>
-<div id="toast-container" class="toast-container"></div>
-
-<div id="confirm-modal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-head">Подтверждение</div>
-        <div id="confirm-text" style="margin-bottom: 20px;"></div>
-        <button class="btn-login" id="btn-confirm-yes">Да</button>
-        <button class="btn-login" id="btn-confirm-no" style="background:#444; margin-top:10px;">Отмена</button>
-    </div>
-</div>
-
-<div id="onboarding-modal" class="modal-overlay">
-    <div class="modal-box" style="text-align: left;">
-        <div class="modal-head" style="text-align: center;">ДОБРО ПОЖАЛОВАТЬ! 🗺️</div>
-        <p style="font-size: 14px; line-height: 1.5; margin-bottom: 10px;"><b>vk-planner</b> — это ваш умный помощник для автопутешествий.</p>
-        <ul style="font-size: 13px; line-height: 1.5; color: #ccc; padding-left: 20px;">
-            <li>Укажите расход топлива и базовые цены ⚙️</li>
-            <li>Добавляйте города, а мы рассчитаем расстояние и бюджет 💰</li>
-            <li>Делитесь красивыми отчетами с друзьями 📸</li>
-        </ul>
-        <button class="btn-login" id="btn-close-onboarding" style="margin-top: 20px;">ПОНЯТНО, В ПУТЬ!</button>
-    </div>
-</div>
-<script src="js/planner.js"></script>
-</body>
-</html>

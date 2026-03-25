@@ -143,6 +143,49 @@ input {
 .dev-links a:hover { color: var(--accent); }
 
 #map { width: 55%; height: 100%; background: #222; }
+/* Делаем левую колонку на ПК максимально компактной, чтобы убрать скролл */
+.settings-col { padding: 10px 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+.settings-col h3 { margin-bottom: 5px; font-size: 14px; margin-top: 5px; }
+.input-group { margin-bottom: 2px; }
+.input-group label { font-size: 10px; margin-bottom: 0; }
+.input-group input { padding: 4px; font-size: 11px; height: 26px; }
+
+/* Умные кнопки для ПК (Показываются только на компьютере) */
+.promo-desktop { display: flex; }
+div.promo-desktop { display: block; }
+.promo-mobile { display: none !important; }
+
+.vk-promo-links { display: flex; gap: 8px; margin-top: 5px; padding-top: 8px; border-top: 1px solid #333; }
+.btn-vk-group, .btn-vk-dev {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 6px; border-radius: 6px; text-decoration: none; font-size: 10px; font-weight: 800;
+    transition: 0.2s; text-transform: uppercase;
+}
+.btn-vk-group { background: #0077FF; color: #fff; box-shadow: 0 4px 10px rgba(0, 119, 255, 0.2); }
+.btn-vk-group:hover { background: #0066CC; transform: translateY(-1px); }
+.btn-vk-dev { background: rgba(255,255,255,0.03); color: #aaa; border: 1px solid #333; }
+.btn-vk-dev:hover { background: rgba(255,255,255,0.06); color: #fff; }
+
+body.vk-light .vk-promo-links { border-top-color: #ddd; }
+body.vk-light .btn-vk-dev { background: #f0f0f0; border-color: #ccc; color: #555; }
+body.vk-light .btn-vk-dev:hover { background: #e0e0e0; color: #000; }
+
+.settings-apply-btn { 
+    display: block !important; width: 100%; padding: 10px; 
+    background: var(--accent); color: white; border: none; border-radius: 8px; 
+    font-weight: 800; margin-bottom: 0; margin-top: 10px; 
+    text-transform: uppercase; cursor: pointer; font-size: 12px; 
+    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); transition: 0.2s;
+}
+.settings-apply-btn:hover { background: #e64a19; }
+
+/* Компактный подвал для ПК */
+.footer-total { 
+    background: #181818; border-top: 1px solid #333; padding: 5px 15px; 
+    position: absolute; bottom: 0; width: 100%; z-index: 20; 
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; left: 0; 
+}
+.route-list-scroll { padding-bottom: 80px; }
 
 /* Модалки */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
@@ -246,6 +289,9 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
 /* =========================================
    МОБИЛЬНАЯ ВЕРСИЯ (ИДЕАЛЬНЫЙ ФИКС КАРТЫ)
    ========================================= */
+/* =========================================
+   МОБИЛЬНАЯ ВЕРСИЯ (ЕДИНСТВЕННЫЙ БЛОК!)
+   ========================================= */
 @media (max-width: 900px) {
     .header { flex-direction: column; height: auto; padding: calc(env(safe-area-inset-top) + 5px) 10px 5px 10px; background: var(--header-bg) !important; gap: 5px; }
     .header-center, .transport-tabs, .btn-home-style { display: none; }
@@ -256,53 +302,55 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
 
     #btn-mobile-settings, #btn-export, #btn-share-vk { display: flex; align-items: center; justify-content: center; width: auto; padding: 0 15px; border-radius: 20px; color: var(--accent); border: 1px solid var(--accent); font-weight: 700; font-size: 14px; background: rgba(255, 87, 34, 0.15); height: 32px; }
 
+    /* Логика умных кнопок для телефона */
     .promo-desktop { display: none !important; }
     .promo-mobile { display: flex !important; }
-    div.promo-mobile { display: block !important; }
-    .vk-promo-links { margin-top: 0; padding-top: 10px; }
-    .btn-vk-group, .btn-vk-dev { padding: 12px; font-size: 12px; border-radius: 12px; }
+    div.promo-mobile { display: flex !important; justify-content: center; }
 
-    /* ФИКС КАРТЫ: делаем её невидимой, а не скрытой */
-    .main-container { display: block; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
+    /* КНОПКИ ВК ДЛЯ МОБИЛОК: Меньше, в ряд, в одну строку */
+    .vk-links-mobile { display: flex; gap: 5px; margin-top: 8px; width: 100%; box-sizing: border-box; }
+    .btn-vk-min {
+        flex: 1 1 50%; display: flex; align-items: center; justify-content: center; gap: 5px;
+        padding: 10px; border-radius: 10px; text-decoration: none; font-size: 11px; font-weight: 700;
+        text-transform: uppercase; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .btn-vk-min-group { background: #0077FF; color: #fff; }
+    .btn-vk-min-dev { background: rgba(255,255,255,0.04); color: #aaa; border: 1px solid #333; }
+    .btn-vk-min-dev:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    
+    body.vk-light .vk-links-mobile { border-top-color: #ddd; }
+    body.vk-light .btn-vk-min-dev { background: #f0f0f0; border-color: #ccc; color: #555; }
+    body.vk-light .btn-vk-min-dev:hover { background: #e0e0e0; color: #000; }
+
+    /* ЖЕСТКИЙ ФИКС КАРТЫ: При открытии карты скрываем всё остальное */
+    .main-container { display: flex; flex-direction: column; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
+    
     .sidebar { width: 100%; min-width: 0; height: 100%; display: block; border: none; }
     
     #map { 
-        width: 100% !important; height: 100% !important; 
+        width: 100vw !important; height: calc(100dvh - 100px) !important; 
         position: absolute !important; top: 0; left: 0; 
-        z-index: -1 !important; opacity: 0 !important; pointer-events: none !important;
-        display: block !important; transition: opacity 0.2s;
+        z-index: 1000 !important; display: none !important; /* Убираем конфликт opacity/display */
     }
     
-    body.show-map #map { z-index: 1000 !important; opacity: 1 !important; pointer-events: auto !important; }
+    /* Логика переключения */
+    body.show-map #map { display: block !important; visibility: visible !important; }
     body.show-map .sidebar { display: none !important; }
 
     .route-col { height: 100%; width: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 160px) !important; box-sizing: border-box; }
     .route-list-scroll { padding-bottom: 200px !important; overflow-y: auto; max-height: 100%; }
 
-    .settings-col { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 9999; padding: 20px; padding-top: 90px; box-sizing: border-box; }
+    .settings-col { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 9999; padding: 20px; padding-top: 90px; box-sizing: border-box; overflow-y: auto; }
     .settings-col.active { display: flex; flex-direction: column; }
     
-    /* Поднимаем кнопку карты и делаем её чуть аккуратнее */
-    #fab-toggle-view { 
-        display: flex; position: fixed; 
-        bottom: calc(env(safe-area-inset-bottom) + 165px); /* Подняли над подвалом */
-        right: 20px; width: 50px; height: 50px; border-radius: 50%; 
-        background: var(--accent); color: #fff; justify-content: center; 
-        align-items: center; font-size: 20px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4); 
-        border: none; z-index: 2000; cursor: pointer; 
-    }
+    /* Убираем опечатку в названии фаба и поднимаем его */
+    #fab-toggle-view { display: flex; position: fixed; bottom: calc(env(safe-area-inset-bottom) + 120px); right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #fff; justify-content: center; align-items: center; font-size: 24px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4); border: none; z-index: 2000; cursor: pointer; }
     body.show-map #fab-toggle-view { background: #333; bottom: calc(env(safe-area-inset-bottom) + 20px); }
-
-    /* Опускаем кнопку "Применить" в самый низ экрана и даем возможность скроллить настройки */
-    .settings-col { overflow-y: auto; }
-    .settings-apply-btn { margin-top: auto; margin-bottom: 20px; padding: 14px; font-size: 14px; flex-shrink: 0; }
-    
-    /* Защита от сползания длинных цифр в подвале */
-    .f-sum { font-size: 17px; } 
-    .f-km { font-size: 13px; }
 
     .footer-total { padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important; background: rgba(24, 24, 24, 0.95); backdrop-filter: blur(5px); width: 100vw; left: 0; border-top: 1px solid #333; z-index: 500; }
     
     .mobile-onboarding-text { display: block; color: #e0e0e0; font-size: 13px; line-height: 1.5; background: rgba(255, 87, 34, 0.15); border: 1px solid rgba(255, 87, 34, 0.3); border-left: 4px solid var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
     body.vk-light .mobile-onboarding-text { color: #333; background: rgba(255, 87, 34, 0.08); }
+    .settings-apply-btn { display: block; width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 800; margin-top: 15px; text-transform: uppercase; cursor: pointer; font-size: 14px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); }
+    .btn-add, .btn-del { min-width: 36px; min-height: 36px; font-size: 16px; }
 }
