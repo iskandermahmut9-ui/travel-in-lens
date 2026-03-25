@@ -165,7 +165,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // ВОТ ЭТИ ДВЕ СТРОЧКИ ВОЗВРАЩАЮТ НАСТРОЙКИ:
     bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
-    bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
+    bind('btn-apply-settings', () => { 
+        document.getElementById('settings-panel').classList.remove('active'); 
+        updateVisuals();
+        if(window.innerWidth > 900) showToast("Настройки применены!");
+    });
     
     // ЭКСПОРТ (теперь всегда в JPG)
     const exportBtn = document.getElementById('btn-export');
@@ -811,11 +815,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function shareToVKStory() {
         if(!currentUser) { showToast("Авторизуйтесь в PRO, чтобы делиться!"); document.getElementById('auth-modal').style.display='flex'; return; }
         
-        // Показываем рекламу
+        // --- ВОЗВРАЩАЕМ РЕКЛАМУ И ПАУЗУ СЮДА ---
         await showVKAd();
-        
-        // Пауза, чтобы оверлей рекламы точно исчез до скриншота
         await new Promise(r => setTimeout(r, 500));
+        // ---------------------------------------
 
         const btn = document.getElementById('btn-share-vk');
         if(!btn) return;
@@ -823,7 +826,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
-            // ... дальше идет твой старый код генерации картинки
+            // ... дальше идет твой стандартный код функции
             const mapEl = document.getElementById('map');
             
             // Показываем карту, если скрыта (для мобилок)

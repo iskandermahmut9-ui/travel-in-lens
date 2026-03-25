@@ -233,7 +233,15 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
 .toast { background: var(--accent); color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); animation: fadein 0.3s, fadeout 0.3s 2.7s; text-align: center; }
 @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeout { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
-
+/* Делаем кнопку Применить видимой везде */
+.settings-apply-btn { 
+    display: block !important; width: 100%; padding: 14px; 
+    background: var(--accent); color: white; border: none; border-radius: 10px; 
+    font-weight: 800; margin-bottom: 15px; margin-top: 10px; 
+    text-transform: uppercase; cursor: pointer; font-size: 14px; 
+    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); transition: 0.2s;
+}
+.settings-apply-btn:hover { background: #e64a19; }
 /* =========================================
    МОБИЛЬНАЯ ВЕРСИЯ (ЕДИНСТВЕННЫЙ БЛОК!)
    ========================================= */
@@ -254,12 +262,19 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
     .vk-promo-links { margin-top: 0; padding-top: 10px; }
     .btn-vk-group, .btn-vk-dev { padding: 12px; font-size: 12px; border-radius: 12px; }
 
-    /* ЖЕСТКИЙ ФИКС КАРТЫ */
-    .main-container { display: block; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
-    #map { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; z-index: 10; display: block !important; visibility: visible !important; opacity: 1 !important; }
+    /* ЖЕСТКИЙ ФИКС КАРТЫ (БЕЗ ТРАНСФОРМАЦИЙ) */
+    .main-container { display: flex; flex-direction: column; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
+    
+    .sidebar { width: 100%; min-width: 0; height: 100%; display: block; border: none; }
+    
+    #map { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; z-index: 1000; display: none !important; }
+    
+    /* Логика переключения */
+    body.show-map #map { display: block !important; }
     body.show-map .sidebar { display: none !important; }
-    body:not(.show-map) #map { transform: translateX(100%); } 
-    body.show-map #map { transform: translateX(0); z-index: 1000; } 
+
+    .route-col { height: 100%; width: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 160px) !important; box-sizing: border-box; }
+    .route-list-scroll { padding-bottom: 200px !important; overflow-y: auto; max-height: 100%; }} 
 
     .sidebar { width: 100%; min-width: 0; height: 100%; display: block; overflow: hidden; border: none; }
     .route-col { height: 100%; width: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 160px) !important; box-sizing: border-box; }
