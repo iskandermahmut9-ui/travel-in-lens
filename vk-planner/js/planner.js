@@ -258,8 +258,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 map.setView([d[0].lat, d[0].lon], 10);
                 await addPoint(parseFloat(d[0].lat), parseFloat(d[0].lon), d[0].display_name.split(',')[0]);
                 document.getElementById('city-search').value = '';
-            } 
-        } catch(e) {}
+            } else {
+                showToast("Город не найден");
+            }
+        } catch(e) { 
+            showToast("Ошибка сети. Проверьте интернет."); 
+        }
     }
 
     async function getAddress(lat, lng) {
@@ -402,6 +406,10 @@ document.addEventListener('DOMContentLoaded', async function() {
    async function saveAsNew() {
         const name = document.getElementById('route-name-inp').value || `Маршрут ${new Date().toLocaleDateString()}`;
         if (!currentUser) return;
+        if (waypoints.length === 0) {
+            showToast("Сначала добавьте города в маршрут!");
+            return;
+        }
 
         // Находим кнопку и блокируем её
         const btn = document.getElementById('btn-save-confirm');
@@ -438,6 +446,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function saveUpdate() {
         const name = document.getElementById('route-name-inp').value;
+        if (waypoints.length === 0) {
+            showToast("Сначала добавьте города в маршрут!");
+            return;
+        }
         
         // Находим кнопку и блокируем её
         const btn = document.getElementById('btn-save-update');
