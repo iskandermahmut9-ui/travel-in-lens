@@ -30,15 +30,10 @@
             <button class="tool-btn" id="btn-mobile-settings" title="Настройки"><i class="fa-solid fa-gear"></i></button>
             <button class="tool-btn" id="btn-routes" title="Мои маршруты"><i class="fa-solid fa-folder-open"></i></button>
             <button class="tool-btn" id="btn-save-modal" title="Сохранить"><i class="fa-solid fa-cloud-arrow-up"></i></button>
-            
-            <button class="tool-btn" id="btn-export" title="Скачать JPG">
-                <i class="fa-solid fa-image"></i>
-            </button>
-            
-            <button class="tool-btn" id="btn-share-vk" title="Поделиться в Истории">
-                <i class="fa-brands fa-vk"></i>
-            </button>
+            <button class="tool-btn" id="btn-export" title="Скачать JPG"><i class="fa-solid fa-image"></i></button>
+            <button class="tool-btn" id="btn-share-vk" title="Поделиться в Истории"><i class="fa-brands fa-vk"></i></button>
         </div>
+    </div>
 </header>
 
 <div class="main-container">
@@ -46,7 +41,7 @@
         <div class="settings-col" id="settings-panel">
             <div class="mobile-onboarding-text">
                 <i class="fa-solid fa-circle-info" style="margin-right: 5px;"></i>
-                Перед началом планирования маршрута настройте базовые расходы и параметры поездки. Это поможет точно рассчитать бюджет!
+                Перед началом планирования маршрута настройте базовые параметры поездки.
             </div>
             
             <div>
@@ -61,17 +56,14 @@
                 <div class="input-group"><label>ЭКСКУРСИЯ (ЧЕЛ)</label><input type="number" id="g-excursions" min="0" value="1000"></div>
                 <div class="input-group"><label>СУВЕНИРЫ (ВСЕГО)</label><input type="number" id="g-souvenirs" min="0" value="2000"></div>
             </div>
+            
             <button class="settings-apply-btn" id="btn-apply-settings">ПРИМЕНИТЬ</button>
 
             <div class="vk-promo-links promo-desktop">
-                <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-group">
-                    <i class="fa-brands fa-vk" style="font-size: 16px;"></i> Сообщество
-                </a>
-                <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-dev">
-                    <i class="fa-solid fa-code"></i> Разработчик
-                </a>
+                <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-group"><i class="fa-brands fa-vk" style="font-size: 16px;"></i> Сообщество</a>
+                <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-dev"><i class="fa-solid fa-code"></i> Разработчик</a>
             </div>
-            <div class="promo-desktop" style="text-align: center; font-size: 10px; color: #555; margin-top: 15px; width: 100%;">© 2026 by AL☰X</div>
+            <div class="promo-desktop" style="text-align: center; font-size: 9px; color: #555; margin-top: 10px; width: 100%;">© 2026 by AL☰X</div>
         </div>
 
         <div class="route-col">
@@ -84,11 +76,11 @@
                 <div id="list-content"></div>
             </div>
             
-           <div class="footer-total">
+            <div class="footer-total">
                 <div class="footer-main">
                     <div style="display:flex; align-items:baseline;">
                         <span class="f-label">ИТОГО:</span>
-                        <span class="f-km" id="total-km">0 км (🌙 0)</span>
+                        <span class="f-km" id="total-km">0 км</span>
                     </div>
                     <div class="f-sum" id="total-sum">0 ₽</div>
                 </div>
@@ -100,14 +92,59 @@
                     <div class="fd-item">🎁 <span id="s-souv">0</span></div>
                 </div>
                 
-                <div class="vk-links-mobile">
-                    <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-min btn-vk-min-group">
-                        <i class="fa-brands fa-vk"></i> Сообщество
-                    </a>
-                    <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-min btn-vk-min-dev">
-                        <i class="fa-solid fa-code"></i> Разработчик
-                    </a>
+                <div class="vk-links-mobile promo-mobile">
+                    <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-min btn-vk-min-group"><i class="fa-brands fa-vk"></i> Сообщество</a>
+                    <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-min btn-vk-min-dev"><i class="fa-solid fa-code"></i> Разработчик</a>
                 </div>
-                <div class="promo-mobile" style="text-align: center; font-size: 9px; color: #555; margin-top: 5px; width: 100%; justify-content: center; display: none;">© 2026 by AL☰X</div>
             </div>
         </div>
+    </div>
+    
+    <div id="map"></div>
+</div>
+
+<button class="view-toggle-fab" id="fab-toggle-view" title="Переключить вид">
+    <i class="fa-solid fa-map"></i>
+</button>
+
+<div id="auth-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-head">ВХОД / РЕГИСТРАЦИЯ</div>
+        <p style="font-size: 13px; color: #aaa; margin-bottom: 20px;">Для сохранения маршрутов и создания историй необходима авторизация.</p>
+        <button class="btn-login" id="btn-login-action">ПРОДОЛЖИТЬ</button>
+        <div class="close-modal" id="btn-close-auth">Закрыть</div>
+    </div>
+</div>
+
+<div id="save-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-head">СОХРАНИТЬ МАРШРУТ</div>
+        <input type="text" class="modal-inp" id="route-name-inp" placeholder="Название (например: На море 2026)">
+        <button class="btn-login" id="btn-save-confirm">СОХРАНИТЬ КАК НОВЫЙ</button>
+        <button class="btn-login" id="btn-save-update" style="background:#333; margin-top:10px; display:none;">ОБНОВИТЬ ТЕКУЩИЙ</button>
+        <div class="close-modal" onclick="document.getElementById('save-modal').style.display='none'">Отмена</div>
+    </div>
+</div>
+
+<div id="routes-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 600px;">
+        <div class="modal-head">МОИ МАРШРУТЫ</div>
+        <div class="routes-list" id="routes-list-container"><div style="padding:20px; color:#666">Загрузка...</div></div>
+        <div class="close-modal" id="btn-close-routes">Закрыть</div>
+    </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-head">Подтверждение</div>
+        <div id="confirm-text" style="margin-bottom: 20px;"></div>
+        <button class="btn-login" id="btn-confirm-yes">Да</button>
+        <button class="btn-login" id="btn-confirm-no" style="background:#444; margin-top:10px;">Отмена</button>
+    </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="js/planner.js"></script>
+</body>
+</html>

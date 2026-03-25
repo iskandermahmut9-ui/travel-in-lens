@@ -1,132 +1,74 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: VK Mini App Version");
+    console.log("Planner JS: VK Mini App Ready");
 
-  // --- 0. ИНИЦИАЛИЗАЦИЯ И БЕСШОВНАЯ АВТОРИЗАЦИЯ VK ---
     try {
         if (window.vkBridge) {
-            // Сообщаем ВК, что приложение загрузилось
             vkBridge.send('VKWebAppInit');
-
-            // Подписываемся на смену темы
             vkBridge.subscribe((e) => {
                 if (e.detail.type === 'VKWebAppUpdateConfig') {
                     const scheme = e.detail.data.scheme ? e.detail.data.scheme : 'client_light';
                     if (scheme === 'space_gray' || scheme === 'vkcom_dark' || scheme === 'client_dark') {
-                        document.body.classList.remove('vk-light');
-                        document.body.classList.add('vk-dark');
+                        document.body.classList.remove('vk-light'); document.body.classList.add('vk-dark');
                     } else {
-                        document.body.classList.remove('vk-dark');
-                        document.body.classList.add('vk-light');
+                        document.body.classList.remove('vk-dark'); document.body.classList.add('vk-light');
                     }
                 }
             });
 
-            // --- МАГИЯ БЕСШОВНОГО ВХОДА (С ДЕБАГОМ) ---
             setTimeout(async () => {
                 const btn = document.getElementById('btn-pro-auth');
                 if(!btn) return;
-
                 try {
-                    btn.innerText = 'ВК: ПРОВЕРКА...'; // Шаг 1
-
+                    btn.innerText = 'ВК: ПРОВЕРКА...';
                     const vkUser = await vkBridge.send('VKWebAppGetUserInfo');
-                    
                     if (vkUser && vkUser.id && supabase) {
-                        btn.innerText = 'БАЗА: ВХОД...'; // Шаг 2
-
+                        btn.innerText = 'БАЗА: ВХОД...';
                         const vkEmail = `vk_${vkUser.id}@travel-in-lens.ru`;
                         const vkPass = `vk_secure_pass_${vkUser.id}!`;
-
                         let { data, error } = await supabase.auth.signInWithPassword({ email: vkEmail, password: vkPass });
-                        
                         if (error) {
-                            btn.innerText = 'БАЗА: РЕГИСТРАЦИЯ...'; // Шаг 3
                             let { data: regData, error: regError } = await supabase.auth.signUp({ email: vkEmail, password: vkPass });
-                            
-                            if (!regError && regData.user) {
-                                handleLoginSuccess(regData.user);
-                            } else {
-                                showToast("Ошибка Supabase: " + regError.message);
-                                btn.innerText = 'PRO ВХОД';
-                            }
-                        } else {
-                            handleLoginSuccess(data.user);
-                        }
+                            if (!regError && regData.user) handleLoginSuccess(regData.user);
+                            else { showToast("Ошибка: " + regError.message); btn.innerText = 'ПРОФИЛЬ'; }
+                        } else handleLoginSuccess(data.user);
                     }
-                } catch (authErr) {
-                    // Если VK Bridge выдал ошибку (например, открыли не в ВК)
-                    console.log("Ошибка ВК:", authErr);
-                    btn.innerText = 'PRO ВХОД'; 
-                }
+                } catch (authErr) { console.log("Ошибка ВК:", authErr); btn.innerText = 'ПРОФИЛЬ'; }
             }, 1000);
         }
-    } catch (e) {
-        console.log("VK Bridge не загружен (работаем вне ВК)", e);
-    }
+    } catch (e) { console.log("VK Bridge не загружен", e); }
 
-    let map = null;
-    let supabase = null;
-    let currentUser = null;
-    let waypoints = []; 
-    let routeLayer = null; 
-    let currentRouteId = null; 
-    // Сразу открываем настройки на мобильных устройствах при запуске
-    if (window.innerWidth <= 900) {
-        document.getElementById('settings-panel').classList.add('active');
-    }
-    // --- КАСТОМНЫЕ УВЕДОМЛЕНИЯ ---
+    let map = null, supabase = null, currentUser = null, waypoints = [], routeLayer = null, currentRouteId = null; 
+    
+    if (window.innerWidth <= 900) document.getElementById('settings-panel').classList.add('active');
+
     window.showToast = function(msg) {
-        const container = document.getElementById('toast-container');
-        if(!container) return;
-        const toast = document.createElement('div');
-        toast.className = 'toast'; toast.innerText = msg;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        const container = document.getElementById('toast-container'); if(!container) return;
+        const toast = document.createElement('div'); toast.className = 'toast'; toast.innerText = msg;
+        container.appendChild(toast); setTimeout(() => toast.remove(), 3000);
     };
 
     window.showCustomConfirm = function(msg, onYes) {
         document.getElementById('confirm-text').innerText = msg;
         document.getElementById('confirm-modal').style.display = 'flex';
-        document.getElementById('btn-confirm-yes').onclick = () => {
-            document.getElementById('confirm-modal').style.display = 'none';
-            onYes();
-        };
-        document.getElementById('btn-confirm-no').onclick = () => {
-            document.getElementById('confirm-modal').style.display = 'none';
-        };
+        document.getElementById('btn-confirm-yes').onclick = () => { document.getElementById('confirm-modal').style.display = 'none'; onYes(); };
+        document.getElementById('btn-confirm-no').onclick = () => document.getElementById('confirm-modal').style.display = 'none';
     };
-    // --- РЕКЛАМА ВКОНТАКТЕ ---
+
     async function showVKAd() {
         if (window.vkBridge) {
-            try {
-                // Запрашиваем полноэкранную (межстраничную) рекламу
-                await vkBridge.send("VKWebAppShowNativeAds", { ad_format: "interstitial" });
-                console.log("Реклама успешно показана");
-            } catch (e) {
-                // Ошибка выскочит, если у ВК сейчас нет для нас рекламного ролика 
-                // или включен AdBlock. Мы просто игнорируем её, чтобы приложение не сломалось.
-                console.log("Реклама не показана:", e);
-            }
+            try { await vkBridge.send("VKWebAppShowNativeAds", { ad_format: "interstitial" }); } 
+            catch (e) { console.log("Реклама не показана:", e); }
         }
     }
 
-    // --- 1. КАРТА ---
     try {
-        const container = L.DomUtil.get('map');
-        if(container != null){ container._leaflet_id = null; }
-
-        map = L.map('map', {
-            zoomControl: false, attributionControl: false,
-            preferCanvas: true, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false 
-        }).setView([55.75, 37.61], 6);
-
+        const container = L.DomUtil.get('map'); if(container != null) container._leaflet_id = null;
+        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([55.75, 37.61], 6);
         L.control.zoom({position: 'topright'}).addTo(map);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { crossOrigin: 'anonymous' }).addTo(map);
         map.on('click', async (e) => { await addPoint(e.latlng.lat, e.latlng.lng); });
-
     } catch (e) { console.error("Ошибка карты:", e); }
 
-    // --- 2. SUPABASE ---
     const SUPABASE_URL = 'https://dytfkjgaurzunloekhxd.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5dGZramdhdXJ6dW5sb2VraHhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyOTYwMDgsImV4cCI6MjA4Mzg3MjAwOH0.rM57ha_nnfZTVAVlm0k14JpKNZoeZXcM4QJOjQ7yvdY';
 
@@ -138,20 +80,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     } catch(e) { console.error("Supabase error:", e); }
 
-    // --- 3. UI ---
     const listEl = document.getElementById('list-content');
-    if(listEl) {
-        new Sortable(listEl, {
-            handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
-            onEnd: (evt) => moveWaypoint(evt.oldIndex, evt.newIndex)
-        });
-    }
+    if(listEl) new Sortable(listEl, { handle: '.drag-handle', animation: 150, onEnd: (evt) => moveWaypoint(evt.oldIndex, evt.newIndex) });
 
-   // --- 4. КНОПКИ И ЛОГИКА АВТО-ОТКРЫТИЯ ---
     const bind = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
-
-    bind('btn-pro-auth', () => document.getElementById('auth-modal').style.display='flex');
-    bind('btn-close-auth', () => document.getElementById('auth-modal').style.display='none');
     bind('btn-login-action', handleAuth);
     bind('btn-save-modal', openSaveModal);
     bind('btn-save-confirm', saveAsNew); 
@@ -159,124 +91,67 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-routes', openRoutesModal);
     bind('btn-close-routes', () => document.getElementById('routes-modal').style.display='none');
     bind('btn-add-search', addBySearch);
-    
     bind('btn-export', saveAsJPG);
     bind('btn-share-vk', shareToVKStory);
+    bind('btn-mobile-settings', () => document.getElementById('settings-panel').classList.add('active'));
     
-    // ВОТ ЭТИ ДВЕ СТРОЧКИ ВОЗВРАЩАЮТ НАСТРОЙКИ:
-    bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
     bind('btn-apply-settings', () => { 
         document.getElementById('settings-panel').classList.remove('active'); 
         updateVisuals();
         if(window.innerWidth > 900) showToast("Настройки применены!");
     });
-    
-    // ЭКСПОРТ (теперь всегда в JPG)
-    const exportBtn = document.getElementById('btn-export');
-    if (exportBtn) {
-        exportBtn.onclick = saveAsJPG;
-        exportBtn.title = "Скачать JPG";
-        exportBtn.innerHTML = '<i class="fa-solid fa-image"></i>'; 
-    }
 
-    bind('btn-publish-wall', publishToVKWall);
-    bind('btn-mobile-settings', () => { document.getElementById('settings-panel').classList.add('active'); });
-    bind('btn-apply-settings', () => { document.getElementById('settings-panel').classList.remove('active'); });
-
-    // === ОНБОРДИНГ ===
-    if (!localStorage.getItem('planner_onboarding_shown')) {
-        document.getElementById('onboarding-modal').style.display = 'flex';
-        document.getElementById('btn-close-onboarding').onclick = () => {
-            document.getElementById('onboarding-modal').style.display = 'none';
-            if (window.innerWidth <= 900) {
-                document.getElementById('settings-panel').classList.add('active');
-            }
-            localStorage.setItem('planner_onboarding_shown', 'true');
-        };
-    }
-
-    // === Опечатка в ID фаба! ===
-    // Вместо 'fab-toggle_view' должно быть 'fab-toggle-view' (как в CSS и HTML)
     bind('fab-toggle-view', () => {
         const isMapShown = document.body.classList.contains('show-map');
         const fabIcon = document.querySelector('#fab-toggle-view i');
-        
         if (isMapShown) {
             document.body.classList.remove('show-map');
             if(fabIcon) { fabIcon.classList.remove('fa-list'); fabIcon.classList.add('fa-map'); }
         } else {
             document.body.classList.add('show-map');
             if(fabIcon) { fabIcon.classList.remove('fa-map'); fabIcon.classList.add('fa-list'); }
-            // Это жесткий фикс для Leaflet: он должен обновить размер, когда блок стал display:block
-            setTimeout(() => { if(map) map.invalidateSize(); }, 200);
+            setTimeout(() => { if(map) map.invalidateSize(); }, 300);
         }
     });
+
     const searchInp = document.getElementById('city-search');
-    if(searchInp) {
-        searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
-    }
+    if(searchInp) searchInp.addEventListener('keypress', (e) => { if(e.key==='Enter') addBySearch(); });
 
     ['g-consumption','g-fuel','g-people'].forEach(id => { const el = document.getElementById(id); if(el) el.oninput = updateVisuals; });
     ['g-stay','g-food','g-excursions','g-souvenirs'].forEach(id => { const el = document.getElementById(id); if(el) el.oninput = function() { sync(this.id.split('-')[1], this.value); } });
-
-
-    // ================== ЛОГИКА ==================
 
     function v(id) { const el = document.getElementById(id); return el ? (parseFloat(el.value)||0) : 0; }
     function setText(id, t) { const e = document.getElementById(id); if(e) e.innerText = t; }
     function sync(k,val) { waypoints.forEach((p,i)=>{if(i>0)p.costs[k]=parseInt(val)||0}); updateVisuals(); }
 
-    function getNoun(n, one, two, five) {
-        n = Math.abs(n) % 100; if (n >= 5 && n <= 20) return five;
-        n %= 10; if (n === 1) return one; if (n >= 2 && n <= 4) return two; return five;
-    }
-
     async function addPoint(lat, lng, manualName = null) {
         const id = Date.now();
-        const pt = {
-            id, lat, lng, name: manualName || "...", days: 1, dist: 0,
-            costs: { stay: v('g-stay'), food: v('g-food'), exc: v('g-excursions'), souv: v('g-souvenirs') },
-            marker: L.marker([lat, lng], {draggable: true}).addTo(map)
-        };
+        const pt = { id, lat, lng, name: manualName || "...", days: 1, dist: 0, costs: { stay: v('g-stay'), food: v('g-food'), exc: v('g-excursions'), souv: v('g-souvenirs') }, marker: L.marker([lat, lng], {draggable: true}).addTo(map) };
 
         pt.marker.on('dragend', async (e) => {
             const pos = e.target.getLatLng(); pt.lat=pos.lat; pt.lng=pos.lng;
             pt.name = await getAddress(pos.lat, pos.lng); e.target.bindPopup(pt.name).openPopup();
-            updateRoute();
-            const inp = document.getElementById(`nm-${id}`); if(inp) inp.value=pt.name;
+            updateRoute(); const inp = document.getElementById(`nm-${id}`); if(inp) inp.value=pt.name;
         });
 
-        waypoints.push(pt);
-        renderList(); 
-
-        if (!manualName) {
-            pt.name = await getAddress(lat, lng);
-            const inp = document.getElementById(`nm-${id}`); if(inp) inp.value=pt.name;
-        }
+        waypoints.push(pt); renderList(); 
+        if (!manualName) { pt.name = await getAddress(lat, lng); const inp = document.getElementById(`nm-${id}`); if(inp) inp.value=pt.name; }
         pt.marker.bindPopup(pt.name).openPopup();
         if(waypoints.length > 1) await updateRoute();
         updateVisuals();
     }
 
     async function addBySearch() {
-        const q = document.getElementById('city-search').value.trim();
-        if(!q) return;
-        document.getElementById('city-search').value = ''; // Очищаем поле сразу!
-        // ... остальной код
-        if(!q) return;
+        const q = document.getElementById('city-search').value.trim(); if(!q) return;
+        document.getElementById('city-search').value = '';
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&accept-language=ru`);
             const d = await r.json();
             if (d[0]) {
                 map.setView([d[0].lat, d[0].lon], 10);
                 await addPoint(parseFloat(d[0].lat), parseFloat(d[0].lon), d[0].display_name.split(',')[0]);
-                document.getElementById('city-search').value = '';
-            } else {
-                showToast("Город не найден");
-            }
-        } catch(e) { 
-            showToast("Ошибка сети. Проверьте интернет."); 
-        }
+            } else showToast("Город не найден");
+        } catch(e) { showToast("Ошибка сети. Проверьте интернет."); }
     }
 
     async function getAddress(lat, lng) {
@@ -287,10 +162,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch { return 'Координаты'; }
     }
 
-    function moveWaypoint(oldI, newI) { 
-        const item = waypoints.splice(oldI, 1)[0]; waypoints.splice(newI, 0, item); 
-        updateRoute().then(renderList); 
-    }
+    function moveWaypoint(oldI, newI) { const item = waypoints.splice(oldI, 1)[0]; waypoints.splice(newI, 0, item); updateRoute().then(renderList); }
 
     async function updateRoute() {
         if(waypoints.length < 2) { if(routeLayer) map.removeLayer(routeLayer); return; }
@@ -309,42 +181,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function renderList() {
         const c = document.getElementById('list-content'); if(!c) return; c.innerHTML = '';
-        
         waypoints.forEach((p, i) => {
             const isStart = i === 0;
-            const div = document.createElement('div');
-            div.className = `waypoint-card ${isStart?'start':'point'}`;
-            div.setAttribute('data-id', p.id);
-
-            let h = `<div class="card-header-row">
-                        <div class="name-wrapper"><span class="drag-handle">⋮⋮</span><input id="nm-${p.id}" class="city-name-input" value="${p.name}" autocomplete="off"></div>
-                        <button class="btn-del" data-idx="${i}" title="Удалить">×</button>
-                     </div>`;
-            
+            const div = document.createElement('div'); div.className = `waypoint-card ${isStart?'start':'point'}`; div.setAttribute('data-id', p.id);
+            let h = `<div class="card-header-row"><div class="name-wrapper"><span class="drag-handle">⋮⋮</span><input id="nm-${p.id}" class="city-name-input" value="${p.name}" autocomplete="off"></div><button class="btn-del" data-idx="${i}" title="Удалить">×</button></div>`;
             if(!isStart) {
                 h = `<div class="road-info">🚗 <span id="ds-${p.id}">0</span> км | ⛽ <span id="fl-${p.id}">0</span> ₽</div>` + h;
-                h += `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-                        <label style="margin:0;">СУТОК:</label>
-                        <input type="number" value="${p.days}" style="width:60px; padding:6px; text-align:center;" class="inp-days" data-idx="${i}">
-                      </div>
+                h += `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;"><label style="margin:0;">СУТОК:</label><input type="number" value="${p.days}" style="width:60px; padding:6px; text-align:center;" class="inp-days" data-idx="${i}"></div>
                       <div class="wp-inputs-grid">
                         <div><label>ЖИЛЬЕ</label><input type="number" value="${p.costs.stay}" class="inp-cost" data-idx="${i}" data-k="stay"></div>
                         <div><label>ЕДА</label><input type="number" value="${p.costs.food}" class="inp-cost" data-idx="${i}" data-k="food"></div>
                         <div><label>ЭКСКУРСИЯ</label><input type="number" value="${p.costs.exc}" class="inp-cost" data-idx="${i}" data-k="exc"></div>
                         <div><label>СУВЕНИРЫ</label><input type="number" value="${p.costs.souv}" class="inp-cost" data-idx="${i}" data-k="souv"></div>
-                      </div>
-                      <div class="stage-summary"><div class="stage-total-line">Этап: <span id="st-${p.id}">0</span> ₽</div></div>`;
+                      </div><div class="stage-summary"><div class="stage-total-line">Этап: <span id="st-${p.id}">0</span> ₽</div></div>`;
             } else { h += `<div style="font-size:10px; color:#666; margin-left:10px;">Начало маршрута</div>`; }
             div.innerHTML = h; c.appendChild(div);
         });
-
-        document.querySelectorAll('.btn-del').forEach(b => b.onclick = () => { 
-            map.removeLayer(waypoints[b.dataset.idx].marker); waypoints.splice(b.dataset.idx, 1); updateRoute().then(renderList); 
-        });
-        document.querySelectorAll('.city-name-input').forEach(inp => inp.onchange = function() { 
-            const id = this.id.split('-')[1]; const pt = waypoints.find(w=>w.id==id); 
-            if(pt){ pt.name=this.value; pt.marker.bindPopup(this.value); }
-        });
+        document.querySelectorAll('.btn-del').forEach(b => b.onclick = () => { map.removeLayer(waypoints[b.dataset.idx].marker); waypoints.splice(b.dataset.idx, 1); updateRoute().then(renderList); });
+        document.querySelectorAll('.city-name-input').forEach(inp => inp.onchange = function() { const id = this.id.split('-')[1]; const pt = waypoints.find(w=>w.id==id); if(pt){ pt.name=this.value; pt.marker.bindPopup(this.value); } });
         document.querySelectorAll('.inp-days').forEach(inp => inp.oninput = function() { waypoints[this.dataset.idx].days = parseInt(this.value)||1; updateVisuals(); });
         document.querySelectorAll('.inp-cost').forEach(inp => inp.oninput = function() { waypoints[this.dataset.idx].costs[this.dataset.k] = parseInt(this.value)||0; updateVisuals(); });
         updateVisuals();
@@ -353,7 +207,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     function updateVisuals() {
         const ppl = v('g-people')||1, rate = v('g-consumption'), price = v('g-fuel');
         let T = 0, Km = 0, N = 0, C = {f:0, s:0, fo:0, e:0, sv:0};
-
         waypoints.forEach((p, i) => {
             if (i === 0) return;
             const fuel = (p.dist/100)*rate*price;
@@ -362,14 +215,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             const cExc = (parseInt(p.costs.exc)||0)*ppl;
             const cSouv = (parseInt(p.costs.souv)||0)*1;
             const sum = fuel+cStay+cFood+cExc+cSouv;
-
             T+=sum; Km+=parseFloat(p.dist); N+=parseInt(p.days);
             C.f+=fuel; C.s+=cStay; C.fo+=cFood; C.e+=cExc; C.sv+=cSouv;
-
-            setText(`ds-${p.id}`, p.dist.toFixed(1)); setText(`fl-${p.id}`, Math.round(fuel));
-            setText(`st-${p.id}`, Math.round(sum).toLocaleString());
+            setText(`ds-${p.id}`, p.dist.toFixed(1)); setText(`fl-${p.id}`, Math.round(fuel)); setText(`st-${p.id}`, Math.round(sum).toLocaleString());
         });
-
         setText('total-sum', Math.round(T).toLocaleString() + ' ₽');
         setText('total-km', `${Km.toFixed(1)} км (🌙 ${N})`);
         setText('s-fuel', Math.round(C.f)); setText('s-stay', Math.round(C.s));
@@ -378,13 +227,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function handleAuth() {
         if(!supabase) return;
-        const e = document.getElementById('auth-email').value;
-        const p = document.getElementById('auth-pass').value;
+        const e = document.getElementById('auth-email').value, p = document.getElementById('auth-pass').value;
         let { data, error } = await supabase.auth.signInWithPassword({ email:e, password:p });
         if(error) {
-            if(confirm("Не удалось войти. Создать новый аккаунт?")) {
+            if(confirm("Создать новый аккаунт?")) {
                 const { data:d2, error:e2 } = await supabase.auth.signUp({ email:e, password:p });
-                if(!e2) { showToast("Регистрация успешна!"); handleLoginSuccess(d2.user); } else showToast(e2.message);
+                if(!e2) { showToast("Успешно!"); handleLoginSuccess(d2.user); } else showToast(e2.message);
             }
         } else handleLoginSuccess(data.user);
     }
@@ -392,103 +240,44 @@ document.addEventListener('DOMContentLoaded', async function() {
     function handleLoginSuccess(u) {
         currentUser = u;
         const modal = document.getElementById('auth-modal'); if(modal) modal.style.display='none';
-        const btnPro = document.getElementById('btn-pro-auth'); if(btnPro) btnPro.style.display='none';
         const panel = document.getElementById('user-panel'); if(panel) panel.style.display='flex';
     }
 
     function openSaveModal() {
         if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
         document.getElementById('save-modal').style.display='flex';
-        if(currentRouteId) {
-            document.getElementById('btn-save-update').style.display = 'block';
-            document.getElementById('btn-save-confirm').innerText = 'СОХРАНИТЬ КАК НОВЫЙ';
-        } else {
-            document.getElementById('btn-save-update').style.display = 'none';
-            document.getElementById('btn-save-confirm').innerText = 'СОХРАНИТЬ';
-        }
+        if(currentRouteId) { document.getElementById('btn-save-update').style.display = 'block'; document.getElementById('btn-save-confirm').innerText = 'СОХРАНИТЬ КАК НОВЫЙ'; } 
+        else { document.getElementById('btn-save-update').style.display = 'none'; document.getElementById('btn-save-confirm').innerText = 'СОХРАНИТЬ'; }
     }
 
-    function getCleanData() {
-        return waypoints.map(wp => ({
-            id: wp.id, lat: wp.lat, lng: wp.lng, name: wp.name,
-            days: wp.days, dist: wp.dist, costs: wp.costs
-        }));
-    }
+    function getCleanData() { return waypoints.map(wp => ({ id: wp.id, lat: wp.lat, lng: wp.lng, name: wp.name, days: wp.days, dist: wp.dist, costs: wp.costs })); }
 
-   async function saveAsNew() {
+    async function saveAsNew() {
         const name = document.getElementById('route-name-inp').value || `Маршрут ${new Date().toLocaleDateString()}`;
         if (!currentUser) return;
-        if (waypoints.length === 0) {
-            showToast("Сначала добавьте города в маршрут!");
-            return;
-        }
-
-        // Находим кнопку и блокируем её
-        const btn = document.getElementById('btn-save-confirm');
-        const originalText = btn.innerText;
-        btn.innerText = 'СОХРАНЕНИЕ...';
-        btn.disabled = true; 
-        btn.style.opacity = '0.5';
-        btn.style.cursor = 'not-allowed';
-
+        if (waypoints.length === 0) { showToast("Сначала добавьте города!"); return; }
+        const btn = document.getElementById('btn-save-confirm'); const originalText = btn.innerText;
+        btn.innerText = 'СОХРАНЕНИЕ...'; btn.disabled = true; btn.style.opacity = '0.5';
         try {
             const { count } = await supabase.from('routes').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
-            if(count >= 20) { showToast("Лимит (20) превышен"); return; }
-            
+            if(count >= 20) { showToast("Лимит превышен"); return; }
             const { data, error } = await supabase.from('routes').insert({ user_id: currentUser.id, name, data: getCleanData() }).select();
-            
-            if(!error) {
-                currentRouteId = data[0].id; 
-                showToast("Сохранено!");
-                document.getElementById('save-modal').style.display='none';
-            } else {
-                showToast("Ошибка базы: " + error.message);
-            }
-        } catch (e) {
-            console.error(e);
-            showToast("Сетевая ошибка. Проверьте подключение.");
-        } finally {
-            // Обязательно возвращаем кнопку к жизни при любом исходе
-            btn.innerText = originalText;
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-        }
+            if(!error) { currentRouteId = data[0].id; showToast("Сохранено!"); document.getElementById('save-modal').style.display='none'; } 
+            else showToast("Ошибка базы: " + error.message);
+        } catch (e) { showToast("Сетевая ошибка."); } 
+        finally { btn.innerText = originalText; btn.disabled = false; btn.style.opacity = '1'; }
     }
 
     async function saveUpdate() {
         const name = document.getElementById('route-name-inp').value;
-        if (waypoints.length === 0) {
-            showToast("Сначала добавьте города в маршрут!");
-            return;
-        }
-        
-        // Находим кнопку и блокируем её
-        const btn = document.getElementById('btn-save-update');
-        const originalText = btn.innerText;
-        btn.innerText = 'ОБНОВЛЕНИЕ...';
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-        btn.style.cursor = 'not-allowed';
-
+        if (waypoints.length === 0) return;
+        const btn = document.getElementById('btn-save-update'); const originalText = btn.innerText;
+        btn.innerText = 'ОБНОВЛЕНИЕ...'; btn.disabled = true; btn.style.opacity = '0.5';
         try {
             const { error } = await supabase.from('routes').update({ data: getCleanData(), name }).eq('id', currentRouteId);
-            if(!error) { 
-                showToast("Обновлено!"); 
-                document.getElementById('save-modal').style.display='none'; 
-            } else {
-                showToast(error.message);
-            }
-        } catch (e) {
-            console.error(e);
-            showToast("Сетевая ошибка. Проверьте подключение.");
-        } finally {
-            // Возвращаем кнопку в исходное состояние
-            btn.innerText = originalText;
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-        }
+            if(!error) { showToast("Обновлено!"); document.getElementById('save-modal').style.display='none'; } else showToast(error.message);
+        } catch (e) { showToast("Сетевая ошибка."); } 
+        finally { btn.innerText = originalText; btn.disabled = false; btn.style.opacity = '1'; }
     }
 
     async function openRoutesModal() {
@@ -499,12 +288,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         if(data && data.length) {
             data.forEach(r => {
                 const el = document.createElement('div'); el.className = 'route-item';
-                el.innerHTML = `
-                    <div class="route-info"><div class="route-name">${r.name}</div><div class="route-date">${new Date(r.created_at).toLocaleDateString()}</div></div>
-                    <div class="route-actions">
-                        <button class="btn-load-route" data-id="${r.id}">Загрузить</button>
-                        <button class="btn-del-route" data-id="${r.id}"><i class="fa-solid fa-trash"></i></button>
-                    </div>`;
+                el.innerHTML = `<div class="route-info"><div class="route-name">${r.name}</div><div class="route-date">${new Date(r.created_at).toLocaleDateString()}</div></div>
+                    <div class="route-actions"><button class="btn-load-route" data-id="${r.id}">Загрузить</button><button class="btn-del-route" data-id="${r.id}"><i class="fa-solid fa-trash"></i></button></div>`;
                 el.querySelector('.btn-load-route').onclick = () => loadRoute(r);
                 el.querySelector('.btn-del-route').onclick = () => deleteRoute(r.id);
                 list.appendChild(el);
@@ -512,27 +297,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else list.innerHTML = 'Нет маршрутов';
     }
 
-    async function deleteRoute(id) {
-        showCustomConfirm("Удалить этот маршрут навсегда?", async () => {
-            await supabase.from('routes').delete().eq('id', id); 
-            openRoutesModal();
-        });
-    }
+    async function deleteRoute(id) { showCustomConfirm("Удалить этот маршрут навсегда?", async () => { await supabase.from('routes').delete().eq('id', id); openRoutesModal(); }); }
 
     function loadRoute(r) {
         map.eachLayer(l => { if(l instanceof L.Marker || l instanceof L.Polyline) map.removeLayer(l); });
         if(routeLayer) map.removeLayer(routeLayer);
-        waypoints = r.data; currentRouteId = r.id; 
-        document.getElementById('routes-modal').style.display='none';
+        waypoints = r.data; currentRouteId = r.id; document.getElementById('routes-modal').style.display='none';
         document.getElementById('route-name-inp').value = r.name;
         waypoints.forEach(p => {
-            p.marker = L.marker([p.lat, p.lng], {draggable: true}).addTo(map);
-            p.marker.bindPopup(p.name);
-            p.marker.on('dragend', async (e) => {
-                const pos = e.target.getLatLng(); p.lat=pos.lat; p.lng=pos.lng;
-                p.name = await getAddress(pos.lat, pos.lng); e.target.bindPopup(p.name).openPopup();
-                updateRoute(); 
-            });
+            p.marker = L.marker([p.lat, p.lng], {draggable: true}).addTo(map); p.marker.bindPopup(p.name);
+            p.marker.on('dragend', async (e) => { const pos = e.target.getLatLng(); p.lat=pos.lat; p.lng=pos.lng; p.name = await getAddress(pos.lat, pos.lng); e.target.bindPopup(p.name).openPopup(); updateRoute(); });
         });
         updateRoute(); renderList();
     }
@@ -542,385 +316,99 @@ document.addEventListener('DOMContentLoaded', async function() {
         const ppl = v('g-people')||1, rate = v('g-consumption'), price = v('g-fuel');
         const body = waypoints.map((p, i) => {
             if(i===0) return [`1. ${p.name}`, '-', '-', '-', '-', '-', '-', '-', '-'];
-            const fuel = Math.round((p.dist/100)*rate*price);
-            const stay = (parseInt(p.costs.stay)||0)*(parseInt(p.days)||1);
-            const food = (parseInt(p.costs.food)||0)*ppl*(parseInt(p.days)||1);
-            const exc = (parseInt(p.costs.exc)||0)*ppl;
-            const souv = parseInt(p.costs.souv)||0;
+            const fuel = Math.round((p.dist/100)*rate*price), stay = (parseInt(p.costs.stay)||0)*(parseInt(p.days)||1);
+            const food = (parseInt(p.costs.food)||0)*ppl*(parseInt(p.days)||1), exc = (parseInt(p.costs.exc)||0)*ppl, souv = parseInt(p.costs.souv)||0;
             const rowT = fuel+stay+food+exc+souv;
-            tDays+=(parseInt(p.days)||1); tDist+=parseFloat(p.dist);
-            tFuel+=fuel; tStay+=stay; tFood+=food; tExc+=exc; tSouv+=souv; gTotal+=rowT;
+            tDays+=(parseInt(p.days)||1); tDist+=parseFloat(p.dist); tFuel+=fuel; tStay+=stay; tFood+=food; tExc+=exc; tSouv+=souv; gTotal+=rowT;
             return [`${i+1}. ${p.name}`, p.days, p.dist.toFixed(0), fuel, stay, food, exc, souv, rowT];
         });
         return { body, footer: ['ВСЕГО', tDays, tDist.toFixed(0), tFuel, tStay, tFood, tExc, tSouv, gTotal], grandTotal: gTotal };
     }
 
-    async function prepareMapForCapture() {
-        window.scrollTo(0, 0);
-        if (waypoints.length > 0) {
-            const group = new L.featureGroup(waypoints.map(p => p.marker));
-            if (routeLayer) group.addLayer(routeLayer);
-            map.fitBounds(group.getBounds(), { padding: [50, 50], animate: false });
-        }
-        await new Promise(r => setTimeout(r, 1200));
-        return document.getElementById('map');
-    }
-
-    async function loadCyrillicFont(doc) {
-        const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
-        const response = await fetch(fontUrl);
-        const blob = await response.blob();
-        return new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                doc.addFileToVFS('Roboto.ttf', reader.result.split(',')[1]);
-                doc.addFont('Roboto.ttf', 'Roboto', 'normal'); doc.setFont('Roboto');
-                resolve();
-            };
-            reader.readAsDataURL(blob);
-        });
-    }
-
-    async function generatePDF() {
-        if(!currentUser) { document.getElementById('auth-modal').style.display='flex'; return; }
-        const btn = document.getElementById('btn-export');
-        const oldT = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4'); 
-            const pageW = doc.internal.pageSize.getWidth();
-            const pageH = doc.internal.pageSize.getHeight();
-            const margin = 10;
-
-            await loadCyrillicFont(doc);
-            const mapEl = await prepareMapForCapture();
-            
-            const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 2, allowTaint: true, scrollX: 0, scrollY: 0, backgroundColor: '#ffffff' });
-            const mapImg = mapCanvas.toDataURL('image/png');
-            
-            const imgProps = doc.getImageProperties(mapImg);
-            const imgW = pageW - (margin*2);
-            let imgH = (imgProps.height * imgW) / imgProps.width;
-
-            // --- РЕШЕНИЕ ПРОБЛЕМЫ С 2 ЛИСТАМИ ---
-            // Ограничиваем высоту карты, чтобы она не занимала больше 45% листа
-            const maxMapH = pageH * 0.45; 
-            if (imgH > maxMapH) {
-                const scaledW = (imgProps.width * maxMapH) / imgProps.height;
-                const offsetX = margin + (imgW - scaledW) / 2; // Центрируем ужатую карту
-                doc.addImage(mapImg, 'PNG', offsetX, margin, scaledW, maxMapH);
-                imgH = maxMapH; // Сохраняем новую высоту для таблицы
-            } else {
-                doc.addImage(mapImg, 'PNG', margin, margin, imgW, imgH);
-            }
-            // ------------------------------------
-
-            const { body, footer, grandTotal } = getTableData();
-
-            doc.autoTable({
-                head: [['Город', 'Дни', 'Км', 'Бензин', 'Жилье', 'Еда', 'Досуг', 'Сув.', 'Итого']],
-                body: body,
-                foot: [footer],
-                startY: margin + imgH + 10,
-                theme: 'grid',
-                styles: { font: 'Roboto', fontSize: 10, halign: 'center', cellPadding: 2, textColor: 0, lineColor: 200, lineWidth: 0.1 },
-                headStyles: { fillColor: [255, 87, 34], textColor: 255, fontStyle: 'bold' },
-                footStyles: { fillColor: [40, 40, 40], textColor: 255, fontStyle: 'bold' },
-                columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
-                margin: { left: margin, right: margin }
-            });
-
-            const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(12); doc.setTextColor(0); doc.setFont('Roboto');
-            doc.text(`Бюджет: ${grandTotal.toLocaleString()} RUB`, pageW - margin, finalY, { align: 'right' });
-            
-            doc.save('travel-in-lens.ru.pdf');
-        } catch(e) { console.error(e); showToast("Ошибка PDF: "+e.message); }
-        finally { btn.innerHTML = oldT; }
-    }
     async function saveAsJPG() {
-        // Показываем рекламу
-        await showVKAd();
-        
-        // Даем интерфейсу полсекунды прийти в себя после закрытия рекламы
-        await new Promise(r => setTimeout(r, 500));
-
-        // Ищем кнопку строго по ID, а не по фокусу!
-        const btn = document.getElementById('btn-export'); 
-        if (!btn) return;
-        const oldIcon = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
+        await showVKAd(); await new Promise(r => setTimeout(r, 500));
+        const btn = document.getElementById('btn-export'); if (!btn) return;
+        const oldIcon = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         try {
-            // ... дальше идет твой старый код функции
-            const ua = navigator.userAgent;
-            const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-            
             const mapEl = document.getElementById('map');
-            
-            // --- РЕШЕНИЕ ПРОБЛЕМЫ СКРЫТОЙ КАРТЫ НА ТЕЛЕФОНЕ ---
             const wasMapHidden = !document.body.classList.contains('show-map');
             if (window.innerWidth <= 900 && wasMapHidden) {
-                // Временно показываем карту для скриншота
-                document.body.classList.add('show-map');
-                setTimeout(() => map.invalidateSize(), 100);
-                await new Promise(r => setTimeout(r, 1000)); // Ждем подгрузки тайлов
-            } else {
-                await new Promise(r => setTimeout(r, 800));
-            }
+                document.body.classList.add('show-map'); setTimeout(() => map.invalidateSize(), 100); await new Promise(r => setTimeout(r, 1000));
+            } else await new Promise(r => setTimeout(r, 800));
 
-            // Центрируем маршрут перед снимком
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
-                await new Promise(r => setTimeout(r, 500)); 
+                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); await new Promise(r => setTimeout(r, 500)); 
             }
-
-            const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true,       
-                scale: 1.5,
-                allowTaint: false,
-                backgroundColor: '#ffffff',
-                ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
-            });
-
-            // Прячем карту обратно, если она была скрыта
-            if (window.innerWidth <= 900 && wasMapHidden) {
-                document.body.classList.remove('show-map');
-            }
-            // --------------------------------------------------
+            const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 1.5, allowTaint: false, backgroundColor: '#ffffff', ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') });
+            if (window.innerWidth <= 900 && wasMapHidden) document.body.classList.remove('show-map');
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
-
             const reportDiv = document.createElement('div');
             reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
-            
-            reportDiv.innerHTML = `
-                <div style="padding:20px;">
-                    <h2 style="margin:0 0 15px;">${name}</h2>
-                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;">
-                    <table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;">
-                        <tr style="background:#FF5722; color:white;">
-                            <th style="padding:10px; text-align:left;">Город</th>
-                            <th style="padding:10px;">Дни</th>
-                            <th style="padding:10px;">Км</th>
-                            <th style="padding:10px;">Бензин</th>
-                            <th style="padding:10px;">Жилье</th>
-                            <th style="padding:10px;">Еда</th>
-                            <th style="padding:10px;">Досуг</th>
-                            <th style="padding:10px;">Сув.</th>
-                            <th style="padding:10px;">Итого</th>
-                        </tr>
-                        ${body.map((row, i) => `
-                            <tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;">
-                                <td style="padding:8px; font-weight:bold;">${row[0]}</td>
-                                <td style="padding:8px; text-align:center;">${row[1]}</td>
-                                <td style="padding:8px; text-align:center;">${row[2]}</td>
-                                <td style="padding:8px; text-align:center;">${row[3] !== '-' ? row[3] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:center;">${row[4] !== '-' ? row[4] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:center;">${row[5] !== '-' ? row[5] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:center;">${row[6] !== '-' ? row[6] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:center;">${row[7] !== '-' ? row[7] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:right; font-weight:bold; color:#FF5722;">${row[8] !== '-' ? row[8] + ' ₽' : '-'}</td>
-                            </tr>
-                        `).join('')}
-                        <tr style="background:#333; color:white; font-weight:bold;">
-                            <td style="padding:10px;">ВСЕГО</td>
-                            <td style="padding:10px; text-align:center;">${footer[1]}</td>
-                            <td style="padding:10px; text-align:center;">${footer[2]}</td>
-                            <td style="padding:10px; text-align:center;">${footer[3]} ₽</td>
-                            <td style="padding:10px; text-align:center;">${footer[4]} ₽</td>
-                            <td style="padding:10px; text-align:center;">${footer[5]} ₽</td>
-                            <td style="padding:10px; text-align:center;">${footer[6]} ₽</td>
-                            <td style="padding:10px; text-align:center;">${footer[7]} ₽</td>
-                            <td style="padding:10px; text-align:right; color:#FF5722; font-size:14px;">${grandTotal.toLocaleString()} ₽</td>
-                        </tr>
-                    </table>
-                    <div style="margin-top:20px; text-align:right; color:#888; font-size:12px;">travel-in-lens.ru</div>
-                </div>
-            `;
+            reportDiv.innerHTML = `<div style="padding:20px;"><h2 style="margin:0 0 15px;">${name}</h2><img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;"><table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;"><tr style="background:#FF5722; color:white;"><th style="padding:10px; text-align:left;">Город</th><th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th><th style="padding:10px;">Бензин</th><th style="padding:10px;">Жилье</th><th style="padding:10px;">Еда</th><th style="padding:10px;">Досуг</th><th style="padding:10px;">Сув.</th><th style="padding:10px;">Итого</th></tr>${body.map((row, i) => `<tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;"><td style="padding:8px; font-weight:bold;">${row[0]}</td><td style="padding:8px; text-align:center;">${row[1]}</td><td style="padding:8px; text-align:center;">${row[2]}</td><td style="padding:8px; text-align:center;">${row[3] !== '-' ? row[3] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[4] !== '-' ? row[4] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[5] !== '-' ? row[5] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[6] !== '-' ? row[6] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[7] !== '-' ? row[7] + ' ₽' : '-'}</td><td style="padding:8px; text-align:right; font-weight:bold; color:#FF5722;">${row[8] !== '-' ? row[8] + ' ₽' : '-'}</td></tr>`).join('')}<tr style="background:#333; color:white; font-weight:bold;"><td style="padding:10px;">ВСЕГО</td><td style="padding:10px; text-align:center;">${footer[1]}</td><td style="padding:10px; text-align:center;">${footer[2]}</td><td style="padding:10px; text-align:center;">${footer[3]} ₽</td><td style="padding:10px; text-align:center;">${footer[4]} ₽</td><td style="padding:10px; text-align:center;">${footer[5]} ₽</td><td style="padding:10px; text-align:center;">${footer[6]} ₽</td><td style="padding:10px; text-align:center;">${footer[7]} ₽</td><td style="padding:10px; text-align:right; color:#FF5722; font-size:14px;">${grandTotal.toLocaleString()} ₽</td></tr></table></div>`;
             document.body.appendChild(reportDiv);
-
             const finalCanvas = await html2canvas(reportDiv, { scale: 1 });
             document.body.removeChild(reportDiv);
 
-            const fileName = "travel-in-lens.ru.jpg";
-
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) { showToast("Ошибка: Память переполнена"); return; }
-                const file = new File([blob], fileName, { type: "image/jpeg" });
-
-                if (isMobileOS) {
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                files: [file],
-                                title: 'Маршрут',
-                                text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
-                            });
-                            return; 
-                        } catch (err) {}
-                    }
-                    showImagePopup(finalCanvas.toDataURL('image/jpeg', 0.9));
-                } else {
-                    const link = document.createElement('a');
-                    link.download = fileName;
-                    link.href = URL.createObjectURL(blob);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                if(!blob) return; const file = new File([blob], "travel.jpg", { type: "image/jpeg" });
+                if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try { await navigator.share({ files: [file] }); return; } catch (err) {}
                 }
-
+                const link = document.createElement('a'); link.download = "travel.jpg"; link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
             }, 'image/jpeg', 0.85);
-
-        } catch (e) {
-            showToast("Ошибка сохранения: " + e.message);
-        } finally {
-            btn.innerHTML = oldIcon;
-        }
+        } catch (e) { showToast("Ошибка: " + e.message); } finally { btn.innerHTML = oldIcon; }
     }
 
-    function showImagePopup(base64Img) {
-        const overlay = document.createElement('div');
-        overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0';
-        overlay.style.width = '100%'; overlay.style.height = '100%';
-        overlay.style.background = 'rgba(0,0,0,0.8)'; overlay.style.zIndex = '9999';
-        overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
-        overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
-
-        const msg = document.createElement('div');
-        msg.innerHTML = "Нажмите на картинку и держите, чтобы сохранить";
-        msg.style.color = '#fff'; msg.style.marginBottom = '10px'; msg.style.textAlign='center';
-
-        const img = document.createElement('img');
-        img.src = base64Img;
-        img.style.maxWidth = '90%'; img.style.maxHeight = '80%';
-        img.style.border = '2px solid #fff';
-
-        const closeBtn = document.createElement('button');
-        closeBtn.innerText = "Закрыть";
-        closeBtn.style.marginTop = '15px'; closeBtn.style.padding = '10px 20px';
-        closeBtn.style.background = '#FF5722'; closeBtn.style.color = '#fff';
-        closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '5px';
-        closeBtn.onclick = () => document.body.removeChild(overlay);
-
-        overlay.appendChild(msg);
-        overlay.appendChild(img);
-        overlay.appendChild(closeBtn);
-        document.body.appendChild(overlay);
-    }
     async function shareToVKStory() {
-        if(!currentUser) { showToast("Авторизуйтесь в PRO, чтобы делиться!"); document.getElementById('auth-modal').style.display='flex'; return; }
+        if(!currentUser) { showToast("Авторизуйтесь в PRO!"); document.getElementById('auth-modal').style.display='flex'; return; }
         
-        // Вызов рекламы и пауза
-        await showVKAd();
-        await new Promise(r => setTimeout(r, 500));
+        await showVKAd(); await new Promise(r => setTimeout(r, 500));
 
-        const btn = document.getElementById('btn-share-vk');
-        if(!btn) return;
-        const oldIcon = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        const btn = document.getElementById('btn-share-vk'); if(!btn) return;
+        const oldIcon = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
             const mapEl = document.getElementById('map');
-            
             const wasMapHidden = !document.body.classList.contains('show-map');
             if (window.innerWidth <= 900 && wasMapHidden) {
-                document.body.classList.add('show-map');
-                setTimeout(() => map.invalidateSize(), 100);
-                await new Promise(r => setTimeout(r, 1000)); 
-            } else {
-                await new Promise(r => setTimeout(r, 500)); 
-            }
+                document.body.classList.add('show-map'); setTimeout(() => map.invalidateSize(), 100); await new Promise(r => setTimeout(r, 1000)); 
+            } else await new Promise(r => setTimeout(r, 500)); 
 
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
-                await new Promise(r => setTimeout(r, 1000)); 
+                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); await new Promise(r => setTimeout(r, 1000)); 
             }
 
-            const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true, scale: 2, backgroundColor: '#ffffff', allowTaint: false,
-                ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') 
-            });
-
-            if (window.innerWidth <= 900 && wasMapHidden) { document.body.classList.remove('show-map'); }
+            const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 2, backgroundColor: '#ffffff', allowTaint: false, ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') });
+            if (window.innerWidth <= 900 && wasMapHidden) document.body.classList.remove('show-map');
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут путешествия";
 
             const storyDiv = document.createElement('div');
-            storyDiv.style.position = 'absolute'; storyDiv.style.left = '-9999px'; storyDiv.style.top = '0'; 
-            storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px'; 
-            storyDiv.style.fontFamily = 'system-ui, -apple-system, sans-serif';
-            storyDiv.style.background = '#121212'; 
-            storyDiv.style.color = '#ffffff';
+            storyDiv.style.position = 'absolute'; storyDiv.style.left = '-9999px'; storyDiv.style.top = '0'; storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px'; 
+            storyDiv.style.fontFamily = 'system-ui, -apple-system, sans-serif'; storyDiv.style.background = '#121212'; storyDiv.style.color = '#ffffff';
             
             const imgData = mapCanvas.toDataURL('image/jpeg', 0.85);
-            
-            const expensesRow = footer[3] === '-' && footer[4] === '-' && footer[5] === '-' && footer[6] === '-' && footer[7] === '-' ? '' : `
-                    <div style="display: flex; justify-content: space-around; font-size: 32px; font-weight: bold; color: #FF5722; margin-bottom: 50px;">
-                        ${footer[3] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">⛽</span> ${footer[3]} ₽</div>` : ''}
-                        ${footer[4] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🏠</span> ${footer[4]} ₽</div>` : ''}
-                        ${footer[5] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🍔</span> ${footer[5]} ₽</div>` : ''}
-                        ${footer[6] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎫</span> ${footer[6]} ₽</div>` : ''}
-                        ${footer[7] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎁</span> ${footer[7]} ₽</div>` : ''}
-                    </div>
-            `;
-            const waypointRows = body.length === 0 ? '<div style="text-align:center; color:#888; padding: 20px 0;">Маршрут пока пуст</div>' : body.slice(0, 6).map(row => `
-                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 36px; padding: 25px 0; border-bottom: 1px solid #2a2a2a;">
-                                <div style="display: flex; align-items: center; max-width: 75%;">
-                                    <span style="font-size: 28px; color: #FF5722; margin-right: 20px;">
-                                        <i class="fa-solid fa-location-dot"></i>
-                                    </span>
-                                    <span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${row[0]}</span>
-                                </div>
-                                <span style="color: #FF5722; font-weight: 900; font-size: 40px;">${row[8]} ₽</span>
-                            </div>
-                        `).join('');
+            const expensesRow = footer[3] === '-' && footer[4] === '-' && footer[5] === '-' && footer[6] === '-' && footer[7] === '-' ? '' : `<div style="display: flex; justify-content: space-around; font-size: 32px; font-weight: bold; color: #FF5722; margin-bottom: 50px;">${footer[3] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">⛽</span> ${footer[3]} ₽</div>` : ''}${footer[4] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🏠</span> ${footer[4]} ₽</div>` : ''}${footer[5] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🍔</span> ${footer[5]} ₽</div>` : ''}${footer[6] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎫</span> ${footer[6]} ₽</div>` : ''}${footer[7] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎁</span> ${footer[7]} ₽</div>` : ''}</div>`;
+            const waypointRows = body.length === 0 ? '<div style="text-align:center; color:#888; padding: 20px 0;">Маршрут пока пуст</div>' : body.slice(0, 6).map(row => `<div style="display: flex; align-items: center; justify-content: space-between; font-size: 36px; padding: 25px 0; border-bottom: 1px solid #2a2a2a;"><div style="display: flex; align-items: center; max-width: 75%;"><span style="font-size: 28px; color: #FF5722; margin-right: 20px;"><i class="fa-solid fa-location-dot"></i></span><span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${row[0]}</span></div><span style="color: #FF5722; font-weight: 900; font-size: 40px;">${row[8]} ₽</span></div>`).join('');
 
-            storyDiv.innerHTML = `
-                <div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;">
-                    <div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">${name}</div>
-                    <div style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; margin-bottom: 60px;">
-                        <span style="font-size: 32px; color: #aaa; margin-right: 15px;">Бюджет</span>
-                        <span style="font-size: 48px; font-weight: 900; color: #FF5722;">${grandTotal.toLocaleString()} ₽</span>
-                    </div>
-                    <div style="width: 100%; height: 600px; background: #fff url('${imgData}') no-repeat center center; background-size: contain; border-radius: 40px; border: 4px solid #333; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);"></div>
-                    ${expensesRow}
-                    <div style="background: rgba(255, 255, 255, 0.03); border-radius: 30px; padding: 40px 50px; border: 2px solid #333;">
-                        <div style="font-size: 28px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px;">Остановки</div>
-                        ${waypointRows}
-                        ${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:30px; font-size: 28px; font-style: italic;">и еще ${body.length - 6} точек...</div>` : ''}
-                    </div>
-                    <div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666; padding-top: 50px;">
-                        Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span>
-                    </div>
-                </div>
-            `;
+            storyDiv.innerHTML = `<div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;"><div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">${name}</div><div style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; margin-bottom: 60px;"><span style="font-size: 32px; color: #aaa; margin-right: 15px;">Бюджет</span><span style="font-size: 48px; font-weight: 900; color: #FF5722;">${grandTotal.toLocaleString()} ₽</span></div><div style="width: 100%; height: 600px; background: #fff url('${imgData}') no-repeat center center; background-size: contain; border-radius: 40px; border: 4px solid #333; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);"></div>${expensesRow}<div style="background: rgba(255, 255, 255, 0.03); border-radius: 30px; padding: 40px 50px; border: 2px solid #333;"><div style="font-size: 28px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px;">Остановки</div>${waypointRows}${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:30px; font-size: 28px; font-style: italic;">и еще ${body.length - 6} точек...</div>` : ''}</div><div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666; padding-top: 50px;">Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span></div></div>`;
             document.body.appendChild(storyDiv);
 
             const finalCanvas = await html2canvas(storyDiv, { scale: 1, backgroundColor: null, windowWidth: 1080, windowHeight: 1920, useCORS: true, logging: false });
-            document.body.removeChild(storyDiv);
-            const base64Img = finalCanvas.toDataURL('image/jpeg', 0.9);
+            document.body.removeChild(storyDiv); const base64Img = finalCanvas.toDataURL('image/jpeg', 0.9);
 
-            if (window.vkBridge) {
-                await vkBridge.send("VKWebAppShowStoryBox", {
-                    background_type: "image", blob: base64Img,
-                    attachment: { text: "open", type: "url", url: "https://vk.com/app54486894" }
-                });
-            } else { showToast("Публикация доступна только внутри ВК"); }
-
-        } catch (e) {
-            console.error(e);
-            showToast("Ошибка создания истории");
-        } finally {
-            btn.innerHTML = oldIcon;
-        }
+            if (window.vkBridge) await vkBridge.send("VKWebAppShowStoryBox", { background_type: "image", blob: base64Img, attachment: { text: "open", type: "url", url: "https://vk.com/app54486894" } });
+            else showToast("Публикация доступна только внутри ВК");
+        } catch (e) { console.error(e); showToast("Ошибка создания истории"); } 
+        finally { btn.innerHTML = oldIcon; }
     }
 });

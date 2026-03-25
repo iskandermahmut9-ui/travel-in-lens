@@ -16,9 +16,6 @@ body {
     background-image: radial-gradient(#1f1f1f 1px, transparent 1px); background-size: 24px 24px;
 }
 
-/* =========================================
-   ШАПКА (DESKTOP)
-   ========================================= */
 .header {
     background: var(--header-bg); height: var(--header-h);
     display: flex; align-items: center; justify-content: space-between;
@@ -26,70 +23,47 @@ body {
     z-index: 1000; flex-shrink: 0;
 }
 
-.logo {
-    font-family: 'Russo One', sans-serif; color: var(--accent); font-size: 15px;
-    text-transform: uppercase; text-decoration: none;
-    display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px;
-}
-
+.logo { font-family: 'Russo One', sans-serif; color: var(--accent); font-size: 15px; text-transform: uppercase; text-decoration: none; display: flex; align-items: center; gap: 8px; }
 .header-right { display: flex; align-items: center; gap: 15px; }
 .user-panel { display: none; align-items: center; gap: 12px; margin-right: 15px; }
 
 .tool-btn {
     width: 38px; height: 38px; background: rgba(255,255,255, 0.05); 
     border: 1px solid transparent; border-radius: 50%; color: #ccc; font-size: 15px;
-    display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s;
-    flex-shrink: 0;
+    display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; flex-shrink: 0;
 }
 .tool-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(255, 87, 34, 0.1); }
 
-#btn-mobile-settings { 
-    display: none; width: auto; padding: 0 15px; border-radius: 20px;
-    background: rgba(255, 87, 34, 0.15); color: var(--accent); 
-    border: 1px solid var(--accent); font-weight: 700; font-size: 14px;
-}
+#btn-mobile-settings { display: none; width: auto; padding: 0 15px; border-radius: 20px; background: rgba(255, 87, 34, 0.15); color: var(--accent); border: 1px solid var(--accent); font-weight: 700; font-size: 14px; }
 
-.btn-pro {
-    background: transparent; color: #FFD700; border: 1px solid rgba(255, 215, 0, 0.4);
-    padding: 10px 20px; border-radius: 50px; font-weight: 800; font-size: 11px;
-    cursor: pointer; text-transform: uppercase; transition: 0.3s; margin-right: 10px;
-}
-
-.btn-home-style {
-    display: flex; align-items: center; gap: 8px; text-decoration: none;
-    color: var(--accent); border: 1px solid var(--accent); 
-    padding: 10px 24px; border-radius: 50px; 
-    font-size: 12px; font-weight: 700; text-transform: uppercase;
-}
-
-/* =========================================
-   ОСНОВНОЙ ЛЭЙАУТ
-   ========================================= */
-
+/* === ОСНОВНОЙ ЛЭЙАУТ === */
 .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
 .sidebar { width: 45%; min-width: 580px; background: rgba(20, 20, 20, 0.98); display: grid; grid-template-columns: 220px 1fr; border-right: 1px solid #222; height: 100%; position: relative; z-index: 5; }
 
-.settings-col { background: #181818; padding: 20px; border-right: 1px solid #222; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
-.settings-apply-btn { display: none; }
+/* Компактные настройки для ПК */
+.settings-col { background: #181818; padding: 10px 15px; border-right: 1px solid #222; overflow-y: auto; display: flex; flex-direction: column; box-sizing: border-box; }
+.settings-col h3 { font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--accent); margin: 10px 0 5px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
+.input-group { margin-bottom: 4px; }
+.input-group label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); margin-bottom: 2px; text-transform: uppercase; }
+.input-group input { width: 100%; padding: 4px 8px; font-size: 12px; font-weight: 700; border: 1px solid #333; border-radius: 6px; background: #252525; color: #fff; box-sizing: border-box; outline: none; height: 28px; }
 
-/* Подсказка, скрыта на десктопе */
+.settings-apply-btn { 
+    display: block !important; width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 8px; 
+    font-weight: 800; margin-top: 15px; margin-bottom: 10px; text-transform: uppercase; cursor: pointer; font-size: 12px; 
+    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); transition: 0.2s; flex-shrink: 0;
+}
+.settings-apply-btn:hover { background: #e64a19; }
+
 .mobile-onboarding-text { display: none; }
 
-h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent); margin: 0 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
-label { display: block; font-size: 10px; font-weight: 700; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; }
-input { 
-    width: 100%; padding: 8px 10px; font-size: 14px; font-weight: 700; 
-    border: 1px solid #333; border-radius: 6px; background: #252525; color: #fff; 
-    box-sizing: border-box; outline: none; 
-}
-
+/* Маршрут */
 .route-col { position: relative; display: flex; flex-direction: column; overflow: hidden; height: 100%; }
-.route-list-scroll { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 160px; width: 100%; box-sizing: border-box; } 
+.route-list-scroll { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 110px; width: 100%; box-sizing: border-box; } 
 .route-header-block { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .route-header-block h2 { margin: 0; font-size: 20px; font-weight: 700; }
 
 .search-box { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
-.search-box input { background: #222; color: #fff; border: 1px solid #333; font-size: 14px; flex: 1; }
+.search-box input { background: #222; color: #fff; border: 1px solid #333; font-size: 14px; flex: 1; padding: 8px; border-radius: 6px; }
 .btn-add { background: var(--accent); color: #fff; border: none; border-radius: 6px; width: 44px; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 .waypoint-card { background: #1f1f1f; border: 1px solid #333; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; position: relative; width: 100%; box-sizing: border-box; }
@@ -97,204 +71,77 @@ input {
 .waypoint-card.point { border-left: 3px solid var(--accent); }
 .card-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-wrapper { flex: 1; display: flex; align-items: center; min-width: 0; }
-
-.drag-handle {
-    cursor: grab; color: #666; font-size: 26px; padding: 0 15px 0 5px; 
-    display: flex; align-items: center; justify-content: center; height: 100%; 
-    touch-action: none; flex-shrink: 0;
-}
-.drag-handle:active { color: var(--accent); cursor: grabbing; }
+.drag-handle { cursor: grab; color: #666; font-size: 26px; padding: 0 15px 0 5px; touch-action: none; flex-shrink: 0; }
 .city-name-input { background: transparent; border: none; color: #fff; font-size: 16px; font-weight: 800; width: 100%; outline: none; text-overflow: ellipsis; }
-.btn-del { background: transparent; color: #666; border: none; width: 24px; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.btn-del { background: transparent; color: #666; border: none; width: 24px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .road-info { display: flex; gap: 15px; margin-bottom: 8px; font-size: 11px; font-weight: 700; color: #aaa; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; }
 .wp-inputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #333; }
 .wp-inputs-grid div { min-width: 0; }
 .stage-summary { margin-top: 6px; text-align: right; padding-top: 4px; }
 .stage-total-line { color: var(--accent); font-weight: 800; font-size: 14px; }
 
-/* Компактный подвал для ПК */
-.footer-total { 
-    background: #181818; border-top: 1px solid #333; padding: 10px 20px; 
-    position: absolute; bottom: 0; width: 100%; z-index: 20; 
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; 
-    left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 10px); 
-}
+/* Подвал для ПК */
+.footer-total { background: #181818; border-top: 1px solid #333; padding: 10px 20px; position: absolute; bottom: 0; width: 100%; z-index: 20; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
 .footer-main { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
 .f-sum { font-size: 20px; color: var(--accent); font-weight: 900; }
+.f-km { font-size: 14px; color: #aaa; margin-left: 10px; font-weight: 600;}
 .footer-details-row { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: #888; margin-bottom: 5px; }
 
-/* Кнопки представительства (компактные на ПК) */
-.vk-promo-links { display: flex; gap: 10px; margin-top: 5px; padding-top: 8px; border-top: 1px solid #333; }
-.btn-vk-group, .btn-vk-dev {
-    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 6px 10px; border-radius: 8px; text-decoration: none; font-size: 10px; font-weight: 800;
-    transition: 0.2s; text-transform: uppercase;
-}
-.btn-vk-group { background: #0077FF; color: #fff; box-shadow: 0 4px 15px rgba(0, 119, 255, 0.25); }
-.btn-vk-group:hover { background: #0066CC; transform: translateY(-2px); }
-.btn-vk-dev { background: rgba(255,255,255,0.05); color: #aaa; border: 1px solid #333; }
-.btn-vk-dev:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
-/* Увеличиваем место под список городов, чтобы его не перекрывал подвал */
-.route-list-scroll { padding-bottom: 110px; }
-
-.dev-links { border-top: 1px solid #333; padding-top: 8px; font-size: 10px; color: #666; display: flex; justify-content: space-between; align-items: center; }
-.dev-links a { color: #888; text-decoration: none; transition: 0.2s; }
-.dev-links a:hover { color: var(--accent); }
-
-#map { width: 55%; height: 100%; background: #222; }
-/* Делаем левую колонку на ПК максимально компактной, чтобы убрать скролл */
-.settings-col { padding: 10px 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
-.settings-col h3 { margin-bottom: 5px; font-size: 14px; margin-top: 5px; }
-.input-group { margin-bottom: 2px; }
-.input-group label { font-size: 10px; margin-bottom: 0; }
-.input-group input { padding: 4px; font-size: 11px; height: 26px; }
-
-/* Умные кнопки для ПК (Показываются только на компьютере) */
+/* Кнопки представительства (ПК) */
 .promo-desktop { display: flex; }
 div.promo-desktop { display: block; }
 .promo-mobile { display: none !important; }
 
-.vk-promo-links { display: flex; gap: 8px; margin-top: 5px; padding-top: 8px; border-top: 1px solid #333; }
-.btn-vk-group, .btn-vk-dev {
-    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 6px; border-radius: 6px; text-decoration: none; font-size: 10px; font-weight: 800;
-    transition: 0.2s; text-transform: uppercase;
-}
+.vk-promo-links { display: flex; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid #333; }
+.btn-vk-group, .btn-vk-dev { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 8px; text-decoration: none; font-size: 10px; font-weight: 800; transition: 0.2s; text-transform: uppercase; }
 .btn-vk-group { background: #0077FF; color: #fff; box-shadow: 0 4px 10px rgba(0, 119, 255, 0.2); }
 .btn-vk-group:hover { background: #0066CC; transform: translateY(-1px); }
 .btn-vk-dev { background: rgba(255,255,255,0.03); color: #aaa; border: 1px solid #333; }
 .btn-vk-dev:hover { background: rgba(255,255,255,0.06); color: #fff; }
 
-body.vk-light .vk-promo-links { border-top-color: #ddd; }
-body.vk-light .btn-vk-dev { background: #f0f0f0; border-color: #ccc; color: #555; }
-body.vk-light .btn-vk-dev:hover { background: #e0e0e0; color: #000; }
+#map { width: 55%; height: 100%; background: #222; }
 
-.settings-apply-btn { 
-    display: block !important; width: 100%; padding: 10px; 
-    background: var(--accent); color: white; border: none; border-radius: 8px; 
-    font-weight: 800; margin-bottom: 0; margin-top: 10px; 
-    text-transform: uppercase; cursor: pointer; font-size: 12px; 
-    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); transition: 0.2s;
-}
-.settings-apply-btn:hover { background: #e64a19; }
-
-/* Компактный подвал для ПК */
-.footer-total { 
-    background: #181818; border-top: 1px solid #333; padding: 5px 15px; 
-    position: absolute; bottom: 0; width: 100%; z-index: 20; 
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; left: 0; 
-}
-.route-list-scroll { padding-bottom: 80px; }
-
-/* Модалки */
+/* Модалки и Уведомления */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
 .modal-box { background: var(--modal-bg); padding: 25px; border-radius: 20px; border: 1px solid #333; width: 100%; max-width: 450px; text-align: center; color: var(--text-white); }
 .modal-inp { width: 100%; box-sizing: border-box; margin-bottom: 15px; background: #252525; border: 1px solid #333; color: #fff; border-radius: 10px; font-size: 16px; padding: 12px; }
-.btn-login { width: 100%; background: var(--accent); color: white; padding: 15px; border: none; border-radius: 10px; font-weight: 800; margin-top: 10px; }
+.btn-login { width: 100%; background: var(--accent); color: white; padding: 15px; border: none; border-radius: 10px; font-weight: 800; margin-top: 10px; cursor: pointer; }
 .routes-list { max-height: 50vh; overflow-y: auto; text-align: left; margin-bottom: 20px; border: 1px solid #333; border-radius: 10px; background: #151515; }
 .route-item { padding: 15px; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; }
-.btn-load-route { background: #2e7d32; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; }
-.btn-del-route { background: #c62828; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; }
+.btn-load-route { background: #2e7d32; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+.btn-del-route { background: #c62828; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; }
 .close-modal { margin-top: 25px; color: #666; font-size: 13px; cursor: pointer; text-decoration: underline; }
 
-.view-toggle-fab { display: none; position: fixed; bottom: 160px; right: 20px; width: 60px; height: 60px; border-radius: 30px; background: var(--accent); color: #fff; box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 100; border: none; font-size: 24px; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.2s; }
-.view-toggle-fab:active { transform: scale(0.9); }
-
-/* =========================================
-   VK MINI APPS: ТЕМЫ СВЕТЛАЯ/ТЕМНАЯ
-   ========================================= */
-
-body.vk-light {
-    --bg-dark: #ffffff; 
-    --header-bg: #f5f5f5; 
-    --text-white: #000000;
-    --text-dim: #555555;
-    --modal-bg: #ffffff;
-    background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
-    color: var(--text-white);
-}
-
-body.vk-light input { background: #f4f4f4; color: #000; border: 1px solid #ddd; }
-body.vk-light .waypoint-card, 
-body.vk-light .settings-col, 
-body.vk-light .transport-tabs, 
-body.vk-light .footer-total, 
-body.vk-light .sidebar { background: #ffffff; border-color: #eee; }
-body.vk-light .route-info, 
-body.vk-light .city-name-input { color: #000; }
-body.vk-light .road-info { background: rgba(0,0,0,0.05); color: #555; }
-body.vk-light .header { border-bottom: 1px solid #ddd; }
-body.vk-light .tab { color: #888; }
-body.vk-light .tool-btn { border-color: #ddd; color: #555; background: #fff; }
-body.vk-light .tool-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(255, 87, 34, 0.1); }
-body.vk-light #map { background: #eee; }
-body.vk-light .fd-item span { color: #000; }
-
-body.vk-dark {
-    --bg-dark: #19191a; 
-    --header-bg: #232324;
-    --modal-bg: #2c2d2e;
-}
-/* --- ЛОГИКА УМНЫХ КНОПОК ПРЕДСТАВИТЕЛЬСТВА --- */
-.promo-desktop { display: flex; }
-div.promo-desktop { display: block; }
-.promo-mobile { display: none !important; }
-
-.vk-promo-links { display: flex; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; }
-.btn-vk-group, .btn-vk-dev {
-    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 8px; border-radius: 8px; text-decoration: none; font-size: 10px; font-weight: 800;
-    transition: 0.2s; text-transform: uppercase;
-}
-.btn-vk-group { background: #0077FF; color: #fff; box-shadow: 0 4px 10px rgba(0, 119, 255, 0.2); }
-.btn-vk-group:hover { background: #0066CC; transform: translateY(-1px); }
-.btn-vk-dev { background: rgba(255,255,255,0.03); color: #aaa; border: 1px solid #333; }
-.btn-vk-dev:hover { background: rgba(255,255,255,0.06); color: #fff; }
-
-body.vk-light .vk-promo-links { border-top-color: #ddd; }
-body.vk-light .btn-vk-dev { background: #f0f0f0; border-color: #ccc; color: #555; }
-body.vk-light .btn-vk-dev:hover { background: #e0e0e0; color: #000; }
-
-/* Компактный подвал для ПК */
-.footer-total { 
-    background: #181818; border-top: 1px solid #333; padding: 10px 20px; 
-    position: absolute; bottom: 0; width: 100%; z-index: 20; 
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; 
-    left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 10px); 
-}
-.route-list-scroll { padding-bottom: 120px; }
-
-/* --- ИСПРАВЛЕНИЕ СПИСКА МАРШРУТОВ --- */
-.route-name { font-weight: 800; color: var(--text-white); margin-bottom: 4px; }
-.route-date { font-size: 11px; color: #888; }
-body.vk-light .routes-list { background: #f9f9f9; border-color: #ddd; }
-body.vk-light .route-item { border-bottom: 1px solid #eee; }
-
-/* --- Кастомные Уведомления (Toast) --- */
 .toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
 .toast { background: var(--accent); color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); animation: fadein 0.3s, fadeout 0.3s 2.7s; text-align: center; }
 @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeout { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
-/* Делаем кнопку Применить видимой и компактной */
-.settings-apply-btn { 
-    display: block !important; width: 100%; padding: 10px; 
-    background: var(--accent); color: white; border: none; border-radius: 8px; 
-    font-weight: 800; margin-bottom: 0; margin-top: 15px; 
-    text-transform: uppercase; cursor: pointer; font-size: 12px; 
-    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); transition: 0.2s;
-}
-.settings-apply-btn:hover { background: #e64a19; }
+.view-toggle-fab { display: none; }
+
+/* ТЕМЫ */
+body.vk-light { --bg-dark: #ffffff; --header-bg: #f5f5f5; --text-white: #000000; --text-dim: #555555; --modal-bg: #ffffff; background-image: radial-gradient(#e0e0e0 1px, transparent 1px); color: var(--text-white); }
+body.vk-light input { background: #f4f4f4; color: #000; border: 1px solid #ddd; }
+body.vk-light .waypoint-card, body.vk-light .settings-col, body.vk-light .footer-total, body.vk-light .sidebar { background: #ffffff; border-color: #eee; }
+body.vk-light .route-info, body.vk-light .city-name-input { color: #000; }
+body.vk-light .road-info { background: rgba(0,0,0,0.05); color: #555; }
+body.vk-light .header { border-bottom: 1px solid #ddd; }
+body.vk-light .tool-btn { border-color: #ddd; color: #555; background: #fff; }
+body.vk-light .tool-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(255, 87, 34, 0.1); }
+body.vk-light #map { background: #eee; }
+body.vk-light .fd-item span { color: #000; }
+body.vk-light .vk-promo-links { border-top-color: #ddd; }
+body.vk-light .btn-vk-dev { background: #f0f0f0; border-color: #ccc; color: #555; }
+body.vk-light .btn-vk-dev:hover { background: #e0e0e0; color: #000; }
+body.vk-light .routes-list { background: #f9f9f9; border-color: #ddd; }
+body.vk-light .route-item { border-bottom: 1px solid #eee; }
+body.vk-dark { --bg-dark: #19191a; --header-bg: #232324; --modal-bg: #2c2d2e; }
 
 /* =========================================
-   МОБИЛЬНАЯ ВЕРСИЯ (ИДЕАЛЬНЫЙ ФИКС КАРТЫ)
-   ========================================= */
-/* =========================================
-   МОБИЛЬНАЯ ВЕРСИЯ (ЕДИНСТВЕННЫЙ БЛОК!)
+   МОБИЛЬНАЯ ВЕРСИЯ (ИДЕАЛЬНЫЙ ФИКС)
    ========================================= */
 @media (max-width: 900px) {
     .header { flex-direction: column; height: auto; padding: calc(env(safe-area-inset-top) + 5px) 10px 5px 10px; background: var(--header-bg) !important; gap: 5px; }
-    .header-center, .transport-tabs, .btn-home-style { display: none; }
+    .header-center { display: none; }
     .logo { font-size: 14px; margin-bottom: 2px; }
     .header-right { width: 100%; justify-content: center; }
     .user-panel { justify-content: center; gap: 8px; width: 100%; flex-wrap: wrap; margin-right: 0; }
@@ -302,55 +149,48 @@ body.vk-light .route-item { border-bottom: 1px solid #eee; }
 
     #btn-mobile-settings, #btn-export, #btn-share-vk { display: flex; align-items: center; justify-content: center; width: auto; padding: 0 15px; border-radius: 20px; color: var(--accent); border: 1px solid var(--accent); font-weight: 700; font-size: 14px; background: rgba(255, 87, 34, 0.15); height: 32px; }
 
-    /* Логика умных кнопок для телефона */
     .promo-desktop { display: none !important; }
     .promo-mobile { display: flex !important; }
-    div.promo-mobile { display: flex !important; justify-content: center; }
-
-    /* КНОПКИ ВК ДЛЯ МОБИЛОК: Меньше, в ряд, в одну строку */
-    .vk-links-mobile { display: flex; gap: 5px; margin-top: 8px; width: 100%; box-sizing: border-box; }
-    .btn-vk-min {
-        flex: 1 1 50%; display: flex; align-items: center; justify-content: center; gap: 5px;
-        padding: 10px; border-radius: 10px; text-decoration: none; font-size: 11px; font-weight: 700;
-        text-transform: uppercase; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
+    
+    /* КНОПКИ ВК В ОДИН РЯД */
+    .vk-links-mobile { display: flex; flex-direction: row; gap: 8px; margin-top: 8px; width: 100%; box-sizing: border-box; justify-content: space-between; }
+    .btn-vk-min { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 10px 5px; border-radius: 8px; text-decoration: none; font-size: 10px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
     .btn-vk-min-group { background: #0077FF; color: #fff; }
-    .btn-vk-min-dev { background: rgba(255,255,255,0.04); color: #aaa; border: 1px solid #333; }
-    .btn-vk-min-dev:hover { background: rgba(255,255,255,0.08); color: #fff; }
-    
-    body.vk-light .vk-links-mobile { border-top-color: #ddd; }
-    body.vk-light .btn-vk-min-dev { background: #f0f0f0; border-color: #ccc; color: #555; }
-    body.vk-light .btn-vk-min-dev:hover { background: #e0e0e0; color: #000; }
+    .btn-vk-min-dev { background: rgba(255,255,255,0.06); color: #aaa; border: 1px solid #333; }
 
-    /* ЖЕСТКИЙ ФИКС КАРТЫ: При открытии карты скрываем всё остальное */
-    .main-container { display: flex; flex-direction: column; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
-    
+    /* ФИКС КАРТЫ С ТРАНСФОРМАЦИЕЙ (АБСОЛЮТНАЯ НАДЕЖНОСТЬ) */
+    .main-container { display: block; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
     .sidebar { width: 100%; min-width: 0; height: 100%; display: block; border: none; }
     
     #map { 
         width: 100vw !important; height: calc(100dvh - 100px) !important; 
         position: absolute !important; top: 0; left: 0; 
-        z-index: 1000 !important; display: none !important; /* Убираем конфликт opacity/display */
+        z-index: 1000 !important; 
+        transform: translateX(100%); transition: transform 0.3s ease;
+        display: block !important; opacity: 1 !important; visibility: visible !important;
     }
-    
-    /* Логика переключения */
-    body.show-map #map { display: block !important; visibility: visible !important; }
+    body.show-map #map { transform: translateX(0); }
     body.show-map .sidebar { display: none !important; }
 
-    .route-col { height: 100%; width: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 160px) !important; box-sizing: border-box; }
+    .route-col { height: 100%; width: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 180px) !important; box-sizing: border-box; }
     .route-list-scroll { padding-bottom: 200px !important; overflow-y: auto; max-height: 100%; }
 
     .settings-col { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 9999; padding: 20px; padding-top: 90px; box-sizing: border-box; overflow-y: auto; }
     .settings-col.active { display: flex; flex-direction: column; }
     
-    /* Убираем опечатку в названии фаба и поднимаем его */
+    /* КНОПКА ПРИМЕНИТЬ В САМЫЙ НИЗ */
+    .settings-apply-btn { margin-top: auto; margin-bottom: 30px; padding: 14px; font-size: 14px; flex-shrink: 0; }
+    
+    /* КНОПКА КАРТЫ (ПОДНЯТА) */
     #fab-toggle-view { display: flex; position: fixed; bottom: calc(env(safe-area-inset-bottom) + 120px); right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #fff; justify-content: center; align-items: center; font-size: 24px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4); border: none; z-index: 2000; cursor: pointer; }
     body.show-map #fab-toggle-view { background: #333; bottom: calc(env(safe-area-inset-bottom) + 20px); }
 
     .footer-total { padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important; background: rgba(24, 24, 24, 0.95); backdrop-filter: blur(5px); width: 100vw; left: 0; border-top: 1px solid #333; z-index: 500; }
     
+    .f-sum { font-size: 17px; } 
+    .f-km { font-size: 13px; }
+    
     .mobile-onboarding-text { display: block; color: #e0e0e0; font-size: 13px; line-height: 1.5; background: rgba(255, 87, 34, 0.15); border: 1px solid rgba(255, 87, 34, 0.3); border-left: 4px solid var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
     body.vk-light .mobile-onboarding-text { color: #333; background: rgba(255, 87, 34, 0.08); }
-    .settings-apply-btn { display: block; width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 800; margin-top: 15px; text-transform: uppercase; cursor: pointer; font-size: 14px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); }
     .btn-add, .btn-del { min-width: 36px; min-height: 36px; font-size: 16px; }
 }
