@@ -5,7 +5,7 @@
     --text-white: #ffffff;
     --text-dim: #e0e0e0;
     --modal-bg: #1e1e1e;
-    --header-h: 70px; 
+    --header-h: 55px; 
 }
 
 body { 
@@ -27,7 +27,7 @@ body {
 }
 
 .logo {
-    font-family: 'Russo One', sans-serif; color: var(--accent); font-size: 18px;
+    font-family: 'Russo One', sans-serif; color: var(--accent); font-size: 15px;
     text-transform: uppercase; text-decoration: none;
     display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px;
 }
@@ -65,9 +65,6 @@ body {
 /* =========================================
    ОСНОВНОЙ ЛЭЙАУТ
    ========================================= */
-.transport-tabs { display: flex; background: #161616; padding: 0 30px; border-bottom: 1px solid #222; height: 45px; align-items: center; flex-shrink: 0; }
-.tab { padding: 0 20px; height: 100%; display: flex; align-items: center; cursor: pointer; font-weight: 600; color: #888; border-bottom: 2px solid transparent; font-size: 11px; text-transform: uppercase; }
-.tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
 
 .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
 .sidebar { width: 45%; min-width: 580px; background: rgba(20, 20, 20, 0.98); display: grid; grid-template-columns: 220px 1fr; border-right: 1px solid #222; height: 100%; position: relative; z-index: 5; }
@@ -115,11 +112,31 @@ input {
 .stage-summary { margin-top: 6px; text-align: right; padding-top: 4px; }
 .stage-total-line { color: var(--accent); font-weight: 800; font-size: 14px; }
 
-.footer-total { background: #181818; border-top: 1px solid #333; padding: 15px 20px; position: absolute; bottom: 0; width: 100%; z-index: 20; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; max-height: 220px; overflow-y: auto; left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 15px); }
-.footer-main { display: flex; justify-content: space-between; margin-bottom: 8px; }
-.f-sum { font-size: 24px; color: var(--accent); font-weight: 900; }
-.footer-details-row { display: flex; flex-wrap: wrap; gap: 15px; font-size: 12px; color: #888; margin-bottom: 10px; }
-.fd-item span { color: #fff; font-weight: 700; margin-left: 5px; }
+/* Компактный подвал для ПК */
+.footer-total { 
+    background: #181818; border-top: 1px solid #333; padding: 10px 20px; 
+    position: absolute; bottom: 0; width: 100%; z-index: 20; 
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; 
+    left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 10px); 
+}
+.footer-main { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
+.f-sum { font-size: 20px; color: var(--accent); font-weight: 900; }
+.footer-details-row { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: #888; margin-bottom: 5px; }
+
+/* Кнопки представительства (компактные на ПК) */
+.vk-promo-links { display: flex; gap: 10px; margin-top: 5px; padding-top: 8px; border-top: 1px solid #333; }
+.btn-vk-group, .btn-vk-dev {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 6px 10px; border-radius: 8px; text-decoration: none; font-size: 10px; font-weight: 800;
+    transition: 0.2s; text-transform: uppercase;
+}
+.btn-vk-group { background: #0077FF; color: #fff; box-shadow: 0 4px 15px rgba(0, 119, 255, 0.25); }
+.btn-vk-group:hover { background: #0066CC; transform: translateY(-2px); }
+.btn-vk-dev { background: rgba(255,255,255,0.05); color: #aaa; border: 1px solid #333; }
+.btn-vk-dev:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* Увеличиваем место под список городов, чтобы его не перекрывал подвал */
+.route-list-scroll { padding-bottom: 110px; }
 
 .dev-links { border-top: 1px solid #333; padding-top: 8px; font-size: 10px; color: #666; display: flex; justify-content: space-between; align-items: center; }
 .dev-links a { color: #888; text-decoration: none; transition: 0.2s; }
@@ -215,6 +232,25 @@ body.vk-dark {
         background: var(--bg-dark); z-index: 9999; padding: 20px; padding-top: 90px; box-sizing: border-box;
     }
     .settings-col.active { display: flex; }
+    @media (max-width: 900px) {
+    /* ... твои старые стили медиа-запроса ... */
+
+    /* Возвращаем большие кнопки ВК на телефонах */
+    .vk-promo-links { margin-top: 10px; padding-top: 12px; }
+    .btn-vk-group, .btn-vk-dev { padding: 12px; font-size: 12px; border-radius: 12px; }
+    .route-list-scroll { padding-bottom: 180px; }
+
+    /* ЖЕСТКИЙ ФИКС КАРТЫ: При открытии карты скрываем всё остальное */
+    body.show-map #map {
+        display: block !important;
+        z-index: 10000 !important;
+        height: 100dvh; /* На весь экран */
+    }
+    body.show-map .sidebar, 
+    body.show-map .header {
+        display: none !important;
+    }
+}
     
     /* Стили для онбординг-подсказки на мобильном */
     .mobile-onboarding-text {

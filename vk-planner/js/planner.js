@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     let waypoints = []; 
     let routeLayer = null; 
     let currentRouteId = null; 
+    // Сразу открываем настройки на мобильных устройствах при запуске
+    if (window.innerWidth <= 900) {
+        document.getElementById('settings-panel').classList.add('active');
+    }
     // --- КАСТОМНЫЕ УВЕДОМЛЕНИЯ ---
     window.showToast = function(msg) {
         const container = document.getElementById('toast-container');
