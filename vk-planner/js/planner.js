@@ -192,13 +192,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     bind('fab-toggle-view', () => {
-        document.body.classList.toggle('show-map');
+        const isMapShown = document.body.classList.contains('show-map');
         const fabIcon = document.querySelector('#fab-toggle-view i');
-        if (document.body.classList.contains('show-map')) {
-            fabIcon.classList.remove('fa-map'); fabIcon.classList.add('fa-list');
-            setTimeout(() => map.invalidateSize(), 100);
+        
+        if (isMapShown) {
+            document.body.classList.remove('show-map');
+            if(fabIcon) { fabIcon.classList.remove('fa-list'); fabIcon.classList.add('fa-map'); }
         } else {
-            fabIcon.classList.remove('fa-list'); fabIcon.classList.add('fa-map');
+            document.body.classList.add('show-map');
+            if(fabIcon) { fabIcon.classList.remove('fa-map'); fabIcon.classList.add('fa-list'); }
+            setTimeout(() => { if(map) map.invalidateSize(); }, 100);
         }
     });
 

@@ -193,128 +193,88 @@ body.vk-dark {
     --header-bg: #232324;
     --modal-bg: #2c2d2e;
 }
+/* --- ЛОГИКА УМНЫХ КНОПОК ПРЕДСТАВИТЕЛЬСТВА --- */
+.promo-desktop { display: flex; }
+div.promo-desktop { display: block; }
+.promo-mobile { display: none !important; }
 
-/* =========================================
-   МОБИЛЬНАЯ ВЕРСИЯ
-   ========================================= */
-@media (max-width: 900px) {
-    .header { 
-        flex-direction: column; height: auto; padding: calc(env(safe-area-inset-top) + 5px) 10px 5px 10px;
-        background: var(--header-bg) !important; gap: 5px; 
-    }
-    .header-center, .transport-tabs, .btn-home-style { display: none; }
-    .logo { font-size: 14px; margin-bottom: 2px; }
-    
-    .header-right { width: 100%; justify-content: center; }
-    .user-panel { justify-content: center; gap: 8px; width: 100%; flex-wrap: wrap; margin-right: 0; }
-    
-    .tool-btn { width: 32px; height: 32px; min-width: 32px; min-height: 32px; font-size: 13px; }
-    .btn-pro { font-size: 9px; padding: 5px 8px; }
-
-   #btn-mobile-settings,
-    #btn-share-vk {
-        display: flex; align-items: center; justify-content: center; width: auto; padding: 0 15px; border-radius: 20px;
-        color: var(--accent); border: 1px solid var(--accent); 
-        font-weight: 700; font-size: 14px; background: rgba(255, 87, 34, 0.15);
-        height: 32px;
-    }
-
-    .main-container { display: block; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
-    .sidebar { width: 100%; min-width: 0; height: 100%; display: block; overflow: hidden; border: none; }
-    .route-col { height: 100%; width: 100%; }
-    
-    #map { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10; }
-    body:not(.show-map) #map { display: none !important; }
-    body.show-map .sidebar { display: none !important; }
-    
-    .settings-col { 
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-        background: var(--bg-dark); z-index: 9999; padding: 20px; padding-top: 90px; box-sizing: border-box;
-    }
-    .settings-col.active { display: flex; }
-    @media (max-width: 900px) {
-    /* ... твои старые стили медиа-запроса ... */
-
-    /* Возвращаем большие кнопки ВК на телефонах */
-    .vk-promo-links { margin-top: 10px; padding-top: 12px; }
-    .btn-vk-group, .btn-vk-dev { padding: 12px; font-size: 12px; border-radius: 12px; }
-    .route-list-scroll { padding-bottom: 180px; }
-
-    /* ЖЕСТКИЙ ФИКС КАРТЫ: При открытии карты скрываем всё остальное */
-    body.show-map #map {
-        display: block !important;
-        z-index: 10000 !important;
-        height: 100dvh; /* На весь экран */
-    }
-    body.show-map .sidebar, 
-    body.show-map .header {
-        display: none !important;
-    }
+.vk-promo-links { display: flex; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; }
+.btn-vk-group, .btn-vk-dev {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px; border-radius: 8px; text-decoration: none; font-size: 10px; font-weight: 800;
+    transition: 0.2s; text-transform: uppercase;
 }
-    
-    /* Стили для онбординг-подсказки на мобильном */
-    .mobile-onboarding-text {
-        display: block;
-        color: #e0e0e0;
-        font-size: 13px;
-        line-height: 1.5;
-        background: rgba(255, 87, 34, 0.15);
-        border: 1px solid rgba(255, 87, 34, 0.3);
-        border-left: 4px solid var(--accent);
-        padding: 12px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-    }
-    body.vk-light .mobile-onboarding-text {
-        color: #333;
-        background: rgba(255, 87, 34, 0.08);
-    }
-    
-    .settings-apply-btn { 
-        display: block; width: 100%; padding: 14px; background: var(--accent); color: white; 
-        border: none; border-radius: 10px; font-weight: 800; margin-top: 15px; 
-        text-transform: uppercase; cursor: pointer; font-size: 14px;
-        box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
-    }
+.btn-vk-group { background: #0077FF; color: #fff; box-shadow: 0 4px 10px rgba(0, 119, 255, 0.2); }
+.btn-vk-group:hover { background: #0066CC; transform: translateY(-1px); }
+.btn-vk-dev { background: rgba(255,255,255,0.03); color: #aaa; border: 1px solid #333; }
+.btn-vk-dev:hover { background: rgba(255,255,255,0.06); color: #fff; }
 
-    .view-toggle-fab { display: flex; bottom: 120px; }
-    .btn-add, .btn-del { min-width: 36px; min-height: 36px; font-size: 16px; }
+body.vk-light .vk-promo-links { border-top-color: #ddd; }
+body.vk-light .btn-vk-dev { background: #f0f0f0; border-color: #ccc; color: #555; }
+body.vk-light .btn-vk-dev:hover { background: #e0e0e0; color: #000; }
+
+/* Компактный подвал для ПК */
+.footer-total { 
+    background: #181818; border-top: 1px solid #333; padding: 10px 20px; 
+    position: absolute; bottom: 0; width: 100%; z-index: 20; 
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5); box-sizing: border-box; 
+    left: 0; padding-bottom: calc(env(safe-area-inset-bottom) + 10px); 
 }
+.route-list-scroll { padding-bottom: 120px; }
+
 /* --- ИСПРАВЛЕНИЕ СПИСКА МАРШРУТОВ --- */
 .route-name { font-weight: 800; color: var(--text-white); margin-bottom: 4px; }
 .route-date { font-size: 11px; color: #888; }
-
-/* Поддержка светлой темы для списка */
 body.vk-light .routes-list { background: #f9f9f9; border-color: #ddd; }
 body.vk-light .route-item { border-bottom: 1px solid #eee; }
+
 /* --- Кастомные Уведомления (Toast) --- */
 .toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
 .toast { background: var(--accent); color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); animation: fadein 0.3s, fadeout 0.3s 2.7s; text-align: center; }
 @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeout { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
-/* --- КНОПКИ ПРЕДСТАВИТЕЛЬСТВА (СООБЩЕСТВО И РАЗРАБОТЧИК) --- */
-.vk-promo-links {
-    display: flex; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #333;
-}
-.btn-vk-group, .btn-vk-dev {
-    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 10px; border-radius: 12px; text-decoration: none; font-size: 12px; font-weight: 800;
-    transition: 0.2s; text-transform: uppercase;
-}
-/* Синяя кнопка ВК для группы (привлекает максимум внимания) */
-.btn-vk-group { 
-    background: #0077FF; color: #fff; 
-    box-shadow: 0 4px 15px rgba(0, 119, 255, 0.25); 
-}
-.btn-vk-group:hover { background: #0066CC; transform: translateY(-2px); }
 
-/* Темная контурная кнопка для связи с тобой */
-.btn-vk-dev { 
-    background: rgba(255,255,255,0.05); color: #aaa; border: 1px solid #333; 
-}
-.btn-vk-dev:hover { background: rgba(255,255,255,0.1); color: #fff; }
+/* =========================================
+   МОБИЛЬНАЯ ВЕРСИЯ (ЕДИНСТВЕННЫЙ БЛОК!)
+   ========================================= */
+@media (max-width: 900px) {
+    .header { flex-direction: column; height: auto; padding: calc(env(safe-area-inset-top) + 5px) 10px 5px 10px; background: var(--header-bg) !important; gap: 5px; }
+    .header-center, .transport-tabs, .btn-home-style { display: none; }
+    .logo { font-size: 14px; margin-bottom: 2px; }
+    .header-right { width: 100%; justify-content: center; }
+    .user-panel { justify-content: center; gap: 8px; width: 100%; flex-wrap: wrap; margin-right: 0; }
+    .tool-btn { width: 32px; height: 32px; min-width: 32px; min-height: 32px; font-size: 13px; }
 
-/* Поддержка светлой темы для новых кнопок */
-body.vk-light .vk-promo-links { border-top-color: #ddd; }
-body.vk-light .btn-vk-dev { background: #f5f5f5; border-color: #ddd; color: #555; }
-body.vk-light .btn-vk-dev:hover { background: #e0e0e0; color: #000; }
+    #btn-mobile-settings, #btn-export, #btn-share-vk { display: flex; align-items: center; justify-content: center; width: auto; padding: 0 15px; border-radius: 20px; color: var(--accent); border: 1px solid var(--accent); font-weight: 700; font-size: 14px; background: rgba(255, 87, 34, 0.15); height: 32px; }
+
+    /* Логика умных кнопок для телефона */
+    .promo-desktop { display: none !important; }
+    .promo-mobile { display: flex !important; }
+    div.promo-mobile { display: block !important; }
+    .vk-promo-links { margin-top: 0; padding-top: 10px; }
+    .btn-vk-group, .btn-vk-dev { padding: 12px; font-size: 12px; border-radius: 12px; }
+
+    /* ЖЕСТКИЙ ФИКС КАРТЫ */
+    .main-container { display: block; position: relative; height: calc(100dvh - 100px); width: 100vw; overflow: hidden; }
+    #map { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; z-index: 10; display: block !important; visibility: visible !important; opacity: 1 !important; }
+    body.show-map .sidebar { display: none !important; }
+    body:not(.show-map) #map { transform: translateX(100%); } 
+    body.show-map #map { transform: translateX(0); z-index: 1000; } 
+
+    .sidebar { width: 100%; min-width: 0; height: 100%; display: block; overflow: hidden; border: none; }
+    .route-col { height: 100%; width: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 160px) !important; box-sizing: border-box; }
+    .route-list-scroll { padding-bottom: 200px !important; overflow-y: auto; max-height: 100%; }
+
+    .settings-col { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 9999; padding: 20px; padding-top: 90px; box-sizing: border-box; }
+    .settings-col.active { display: flex; flex-direction: column; }
+    
+    #fab-toggle-view { display: flex; position: fixed; bottom: calc(env(safe-area-inset-bottom) + 120px); right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #fff; justify-content: center; align-items: center; font-size: 24px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4); border: none; z-index: 2000; cursor: pointer; }
+    body.show-map #fab-toggle-view { background: #333; bottom: calc(env(safe-area-inset-bottom) + 20px); }
+
+    .footer-total { padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important; background: rgba(24, 24, 24, 0.95); backdrop-filter: blur(5px); width: 100vw; left: 0; border-top: 1px solid #333; z-index: 500; }
+    
+    .mobile-onboarding-text { display: block; color: #e0e0e0; font-size: 13px; line-height: 1.5; background: rgba(255, 87, 34, 0.15); border: 1px solid rgba(255, 87, 34, 0.3); border-left: 4px solid var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
+    body.vk-light .mobile-onboarding-text { color: #333; background: rgba(255, 87, 34, 0.08); }
+    .settings-apply-btn { display: block; width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 800; margin-top: 15px; text-transform: uppercase; cursor: pointer; font-size: 14px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3); }
+    .btn-add, .btn-del { min-width: 36px; min-height: 36px; font-size: 16px; }
+}

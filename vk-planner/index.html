@@ -50,18 +50,28 @@
             </div>
             
             <div>
-                <h3>Автомобиль</h3>
                 <div class="input-group"><label>РАСХОД (Л/100КМ)</label><input type="number" id="g-consumption" min="0" value="10"></div>
                 <div class="input-group"><label>ТОПЛИВО (₽/Л)</label><input type="number" id="g-fuel" min="0" value="65"></div>
-                <div class="input-group"><label>ЛЮДЕЙ (ЧЕЛ)</label><input type="number" id="g-people" min="0" value="2" min="1"></div>
+                <div class="input-group"><label>ЛЮДЕЙ (ЧЕЛ)</label><input type="number" id="g-people" min="1" value="2"></div>
             </div>
             <div>
                 <h3>Базовые цены</h3>
-                <div class="input-group"><label>ЖИЛЬЕ (СУТКИ)</label><input type="number" id="g-stay"  value="3000"></div>
-                <div class="input-group"><label>ЕДА (ДЕНЬ/ЧЕЛ)</label><input type="number" id="g-food" min="0" vamin="0"lue="1500"></div>
+                <div class="input-group"><label>ЖИЛЬЕ (СУТКИ)</label><input type="number" id="g-stay" min="0" value="3000"></div>
+                <div class="input-group"><label>ЕДА (ДЕНЬ/ЧЕЛ)</label><input type="number" id="g-food" min="0" value="1500"></div>
                 <div class="input-group"><label>ЭКСКУРСИЯ (ЧЕЛ)</label><input type="number" id="g-excursions" min="0" value="1000"></div>
                 <div class="input-group"><label>СУВЕНИРЫ (ВСЕГО)</label><input type="number" id="g-souvenirs" min="0" value="2000"></div>
             </div>
+
+            <div class="vk-promo-links promo-desktop">
+                <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-group">
+                    <i class="fa-brands fa-vk" style="font-size: 16px;"></i> Сообщество
+                </a>
+                <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-dev">
+                    <i class="fa-solid fa-code"></i> Разработчик
+                </a>
+            </div>
+            <div class="promo-desktop" style="text-align: center; font-size: 10px; color: #555; margin-top: 15px; width: 100%;">© 2026 by AL☰X</div>
+
             <button class="settings-apply-btn" id="btn-apply-settings">ПРИМЕНИТЬ И НАЧАТЬ</button>
         </div>
 
@@ -90,7 +100,8 @@
                     <div class="fd-item">🎫 <span id="s-exc">0</span></div>
                     <div class="fd-item">🎁 <span id="s-souv">0</span></div>
                 </div>
-                <div class="vk-promo-links">
+                
+                <div class="vk-promo-links promo-mobile">
                     <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-group">
                         <i class="fa-brands fa-vk" style="font-size: 16px;"></i> Сообщество
                     </a>
@@ -98,7 +109,7 @@
                         <i class="fa-solid fa-code"></i> Разработчик
                     </a>
                 </div>
-                <div style="text-align: center; font-size: 10px; color: #555; margin-top: 8px;">© 2026 by AL☰X</div>
+                <div class="promo-mobile" style="text-align: center; font-size: 10px; color: #555; margin-top: 8px; width: 100%; justify-content: center;">© 2026 by AL☰X</div>
             </div>
         </div>
     </div>
