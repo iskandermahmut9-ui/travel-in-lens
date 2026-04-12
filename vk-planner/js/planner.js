@@ -369,46 +369,58 @@ document.addEventListener('DOMContentLoaded', async function() {
             const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
             const mapEl = document.getElementById('map');
             
-            // --- 2. ФИКС ЧЕРНОГО БЛОКА ---
-            // Если мы на мобилке и карта скрыта — временно показываем её для снимка
-            const wasMapHidden = !document.body.classList.contains('show-map');
-            if (isMobileOS && wasMapHidden) {
-                document.body.classList.add('show-map');
-                if(map) map.invalidateSize();
-                await new Promise(r => setTimeout(r, 500));
+            // --- 2. ФИКС ЧЕРНОГО БЛОКА И МАСШТАБА ---
+            // Сохраняем текущие стили карты, чтобы вернуть их после снимка
+            const oldWidth = mapEl.style.width;
+            const oldHeight = mapEl.style.height;
+            const oldPos = mapEl.style.position;
+            const oldTransform = mapEl.style.transform;
+
+            // На время снимка принудительно делаем карту 800px в ширину
+            // Это гарантирует, что она заполнит весь отчет без черных полей
+            mapEl.style.width = '800px'; 
+            mapEl.style.height = '600px'; 
+            mapEl.style.position = 'relative';
+            mapEl.style.transform = 'none';
+            
+            // Заставляем Leaflet перерисовать тайлы под новый размер 800px
+            if (map) {
+                map.invalidateSize();
+                if (waypoints.length > 0) {
+                    const group = new L.featureGroup(waypoints.map(p => p.marker));
+                    if (routeLayer) group.addLayer(routeLayer);
+                    // Центрируем маршрут в кадре 800x600
+                    map.fitBounds(group.getBounds(), { padding: [40, 40], animate: false });
+                }
             }
 
-            // Центрируем все точки, чтобы ничего не "убегало"
-            if (waypoints.length > 0) {
-                const group = new L.featureGroup(waypoints.map(p => p.marker));
-                if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
-                await new Promise(r => setTimeout(r, 800)); 
-            }
+            // Ждем прогрузки тайлов в новом размере
+            await new Promise(r => setTimeout(r, 1200));
 
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, 
-                scale: 2, // Повышаем качество для четкости
+                scale: 2, // Высокое качество
                 backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
 
-            // Возвращаем мобильный вид как был
-            if (isMobileOS && wasMapHidden) {
-                document.body.classList.remove('show-map');
-            }
+            // ВОЗВРАЩАЕМ КАРТЕ ЕЁ ОБЫЧНЫЙ ВИД (для пользователя ничего не изменится)
+            mapEl.style.width = oldWidth;
+            mapEl.style.height = oldHeight;
+            mapEl.style.position = oldPos;
+            mapEl.style.transform = oldTransform;
+            if (map) map.invalidateSize();
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
 
-            // Создаем невидимый блок для финальной картинки
             const reportDiv = document.createElement('div');
             reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
-                    <h2 style="margin:0 0 15px; color:#000; font-family: 'Russo One', sans-serif;">${name}</h2>
+                    <h2 style="margin:0 0 15px; color:#000; font-family: 'Russo One', sans-serif; font-size: 24px;">${name}</h2>
                     <img src="${mapCanvas.toDataURL('image/jpeg', 0.9)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px; display:block;">
                     <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
@@ -419,16 +431,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                         </tr>
                         ${body.map((row, i) => `
                             <tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;">
-                                <td style="padding:8px; font-weight:bold;">${row[0]}</td>
-                                <td style="padding:8px; text-align:center;">${row[1]}</td>
-                                <td style="padding:8px; text-align:center;">${row[2]}</td>
-                                <td style="padding:8px; text-align:right;">${row[8]} ₽</td>
+                                <td style="padding:10px; font-weight:bold;">${row[0]}</td>
+                                <td style="padding:10px; text-align:center;">${row[1]}</td>
+                                <td style="padding:10px; text-align:center;">${row[2]}</td>
+                                <td style="padding:10px; text-align:right; font-weight:bold;">${row[8]} ₽</td>
                             </tr>`).join('')}
                         <tr style="background:#333; color:white; font-weight:bold;">
-                            <td style="padding:10px;">ВСЕГО</td>
-                            <td style="padding:10px; text-align:center;">${footer[1]}</td>
-                            <td style="padding:10px; text-align:center;">${footer[2]}</td>
-                            <td style="padding:10px; text-align:right; font-size:16px; color:#FF5722;">${grandTotal.toLocaleString()} ₽</td>
+                            <td style="padding:12px;">ИТОГО ЗА ПОЕЗДКУ</td>
+                            <td style="padding:12px; text-align:center;">${footer[1]}</td>
+                            <td style="padding:12px; text-align:center;">${footer[2]}</td>
+                            <td style="padding:12px; text-align:right; font-size:18px; color:#FF5722;">${grandTotal.toLocaleString()} ₽</td>
                         </tr>
                     </table>
                     <div style="margin-top:20px; text-align:right; color:#888; font-size:12px;">travel-in-lens.ru</div>
@@ -440,7 +452,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             finalCanvas.toBlob(async (blob) => {
                 if(!blob) return;
-                const file = new File([blob], "travel.jpg", { type: "image/jpeg" });
+                const file = new File([blob], "travel-in-lens.ru.jpg", { type: "image/jpeg" });
 
                 if (isMobileOS && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
@@ -450,13 +462,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
                 
                 const link = document.createElement('a');
-                link.download = "travel.jpg";
+                link.download = "travel-in-lens.ru.jpg";
                 link.href = URL.createObjectURL(blob);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
 
-            }, 'image/jpeg', 0.85);
+            }, 'image/jpeg', 0.9);
 
         } catch (e) {
             console.error(e);
