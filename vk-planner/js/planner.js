@@ -23,8 +23,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                     const vkUser = await vkBridge.send('VKWebAppGetUserInfo');
                     if (vkUser && vkUser.id && supabase) {
                         btn.innerText = 'БАЗА: ВХОД...';
+                        
                         const vkEmail = `vk_${vkUser.id}@travel-in-lens.ru`;
-                        const vkPass = `vk_secure_pass_${vkUser.id}!`;
+                        // НОВЫЙ БЕЗОПАСНЫЙ ПАРОЛЬ
+                        const vkPass = `vktravel_${vkUser.id}_secure`; 
+                        
                         let { data, error } = await supabase.auth.signInWithPassword({ email: vkEmail, password: vkPass });
                         if (error) {
                             let { data: regData, error: regError } = await supabase.auth.signUp({ email: vkEmail, password: vkPass });
@@ -32,6 +35,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                             else { showToast("Ошибка: " + regError.message); btn.innerText = 'ПРОФИЛЬ'; }
                         } else handleLoginSuccess(data.user);
                     }
+                } catch (authErr) { console.log("Ошибка ВК:", authErr); btn.innerText = 'ПРОФИЛЬ'; }
+            }, 1000);
                 } catch (authErr) { console.log("Ошибка ВК:", authErr); btn.innerText = 'ПРОФИЛЬ'; }
             }, 1000);
         }
