@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return { body, footer: ['ВСЕГО', tDays, tDist.toFixed(0), tFuel, tStay, tFood, tExc, tSouv, gTotal], grandTotal: gTotal };
     }
 
-    async function saveAsJPG() {
+   async function saveAsJPG() {
         await showVKAd(); 
         await new Promise(r => setTimeout(r, 500));
         const btn = document.getElementById('btn-export'); 
@@ -365,46 +365,47 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const mapEl = document.getElementById('map');
             
-            // --- ФИКС ДЛЯ КОРРЕКТНОГО СКРИНШОТА ---
-            // Сохраняем старые стили, чтобы вернуть их потом
+            // 1. Запоминаем текущий вид
             const oldWidth = mapEl.style.width;
             const oldPos = mapEl.style.position;
             const oldTransform = mapEl.style.transform;
 
-            // На время снимка делаем карту "обычной" и широкой
-            mapEl.style.width = '1000px'; 
+            // 2. Делаем карту ровно 800px для снимка (как и вся таблица)
+            mapEl.style.width = '800px'; 
             mapEl.style.position = 'relative';
             mapEl.style.transform = 'none';
             map.invalidateSize(); 
 
+            // Центрируем маршрут
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [50, 50], animate: false });
+                map.fitBounds(group.getBounds(), { padding: [40, 40], animate: false });
             }
             
-            await new Promise(r => setTimeout(r, 800)); // Даем карте прогрузиться
+            // Ждем чуть дольше, чтобы Leaflet отрисовал тайлы в новом размере
+            await new Promise(r => setTimeout(r, 1000)); 
 
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, 
-                scale: 1.5, 
+                scale: 2, // Качество повыше
                 backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
 
-            // Возвращаем карте её текущий вид (для мобилок/ПК)
+            // 3. СРАЗУ возвращаем как было, чтобы пользователь не заметил скачка
             mapEl.style.width = oldWidth;
             mapEl.style.position = oldPos;
             mapEl.style.transform = oldTransform;
             map.invalidateSize();
-            // ---------------------------------------
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
             
             const reportDiv = document.createElement('div');
             reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
-            reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
+            reportDiv.style.width = '800px'; // Совпадает с картой!
+            reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
@@ -442,7 +443,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                             <td style="padding:10px; text-align:right; color:#FF5722; font-size:14px;">${grandTotal.toLocaleString()} ₽</td>
                         </tr>
                     </table>
-                    <div style="text-align:right; color:#888; font-size:12px; margin-top:10px;">travel-in-lens.ru</div>
+                    <div style="text-align:right; color:#888; font-size:10px; margin-top:5px;">travel-in-lens.ru</div>
                 </div>`;
             
             document.body.appendChild(reportDiv);
