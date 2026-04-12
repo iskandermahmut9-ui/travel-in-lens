@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
   async function saveAsJPG() {
-        // 1. Показываем рекламу
+        // Реклама
         await showVKAd(); 
         await new Promise(r => setTimeout(r, 500));
         
@@ -368,50 +368,56 @@ document.addEventListener('DOMContentLoaded', async function() {
             const mapEl = document.getElementById('map');
             const wasMapHidden = !document.body.classList.contains('show-map');
             
-            // Если на мобилке карта скрыта — показываем её
+            // Если мобилка и карта скрыта - показываем
             if (window.innerWidth <= 900 && wasMapHidden) {
                 document.body.classList.add('show-map'); 
-                // Даем карте команду пересчитать размер
-                map.invalidateSize();
+                setTimeout(() => map.invalidateSize(), 100); 
+                await new Promise(r => setTimeout(r, 1000));
+            } else {
                 await new Promise(r => setTimeout(r, 500));
             }
 
-            // --- КРИТИЧЕСКИЙ ФИКС ТАЙМИНГА ---
-            // Принудительно сбрасываем вид, чтобы Leaflet перерисовал маршрут с нуля
+            // Центрируем карту по точкам (без изменения ширины!)
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                // animate: false отключает плавные движения, которые мешают снимку
+                
+                // animate: false выключает плавный полет, чтобы камера не "смазала" кадр
                 map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); 
+                
+                // УВЕЛИЧЕННАЯ ЗАДЕРЖКА: 2.5 секунды!
+                // Даем время серым квадратам прогрузиться, а линии - встать на место
+                await new Promise(r => setTimeout(r, 2500)); 
             }
 
-            // УВЕЛИЧИВАЕМ ЗАДЕРЖКУ ДО 2 СЕКУНД
-            // Это время нужно, чтобы ВСЕ тайлы карты и SVG-линия успели прогрузиться
-            await new Promise(r => setTimeout(r, 2000));
-
+            // Снимок узкой карты "как есть"
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, 
-                scale: 1.5, // Оптимально для четкости
+                scale: 1.5, 
                 allowTaint: false, 
                 backgroundColor: '#ffffff', 
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') 
             });
 
-            // Прячем обратно на мобильном
             if (window.innerWidth <= 900 && wasMapHidden) {
                 document.body.classList.remove('show-map');
             }
 
-            // --- ТАБЛИЦА (9 КОЛОНОК) ---
+            // Твоя оригинальная таблица (9 колонок)
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
+            
             const reportDiv = document.createElement('div');
-            reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
-            reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
+            reportDiv.style.position = 'fixed'; 
+            reportDiv.style.left = '-9999px'; 
+            reportDiv.style.top = '0'; 
+            reportDiv.style.width = '800px'; 
+            reportDiv.style.background = '#fff'; 
+            reportDiv.style.fontFamily = 'Arial, sans-serif';
             
             reportDiv.innerHTML = `
-                <div style="padding:20px; color: #000;">
-                    <h2 style="margin:0 0 15px; font-family: 'Russo One', sans-serif;">${name}</h2>
+                <div style="padding:20px;">
+                    <h2 style="margin:0 0 15px; color:#000; font-family: 'Russo One', sans-serif;">${name}</h2>
                     <img src="${mapCanvas.toDataURL('image/jpeg', 0.9)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px; display:block;">
                     <table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
@@ -422,8 +428,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                         ${body.map((row, i) => `
                             <tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;">
                                 <td style="padding:8px; font-weight:bold;">${row[0]}</td><td style="padding:8px; text-align:center;">${row[1]}</td><td style="padding:8px; text-align:center;">${row[2]}</td>
-                                <td style="padding:8px; text-align:center;">${row[3]} ₽</td><td style="padding:8px; text-align:center;">${row[4]} ₽</td><td style="padding:8px; text-align:center;">${row[5]} ₽</td>
-                                <td style="padding:8px; text-align:center;">${row[6]} ₽</td><td style="padding:8px; text-align:center;">${row[7]} ₽</td><td style="padding:8px; text-align:right; font-weight:bold; color:#FF5722;">${row[8]} ₽</td>
+                                <td style="padding:8px; text-align:center;">${row[3] !== '-' ? row[3] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[4] !== '-' ? row[4] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[5] !== '-' ? row[5] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[6] !== '-' ? row[6] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[7] !== '-' ? row[7] + ' ₽' : '-'}</td><td style="padding:8px; text-align:right; font-weight:bold; color:#FF5722;">${row[8] !== '-' ? row[8] + ' ₽' : '-'}</td>
                             </tr>`).join('')}
                         <tr style="background:#333; color:white; font-weight:bold;">
                             <td style="padding:10px;">ИТОГО</td><td style="padding:10px; text-align:center;">${footer[1]}</td><td style="padding:10px; text-align:center;">${footer[2]}</td>
@@ -439,16 +445,22 @@ document.addEventListener('DOMContentLoaded', async function() {
             document.body.removeChild(reportDiv);
 
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) return; const file = new File([blob], "travel.jpg", { type: "image/jpeg" });
+                if(!blob) return; 
+                const file = new File([blob], "travel-in-lens.ru.jpg", { type: "image/jpeg" });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                     try { await navigator.share({ files: [file] }); return; } catch (err) {}
                 }
-                const link = document.createElement('a'); link.download = "travel.jpg"; link.href = URL.createObjectURL(blob);
+                const link = document.createElement('a'); 
+                link.download = "travel-in-lens.ru.jpg"; 
+                link.href = URL.createObjectURL(blob);
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
             }, 'image/jpeg', 0.85);
 
-        } catch (e) { console.error(e); showToast("Ошибка сохранения!"); } 
-        finally { btn.innerHTML = oldIcon; }
+        } catch (e) { 
+            console.error(e); showToast("Ошибка сохранения!"); 
+        } finally { 
+            btn.innerHTML = oldIcon; 
+        }
     }
     async function shareToVKStory() {
         if(!currentUser) { showToast("Авторизуйтесь в PRO!"); document.getElementById('auth-modal').style.display='flex'; return; }
