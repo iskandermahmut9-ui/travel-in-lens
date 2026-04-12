@@ -17,15 +17,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             setTimeout(async () => {
                 const btn = document.getElementById('btn-pro-auth');
-                if(!btn) return;
+                if(!btn) return; // Теперь кнопка в HTML есть, и скрипт пойдет дальше
                 try {
                     btn.innerText = 'ВК: ПРОВЕРКА...';
                     const vkUser = await vkBridge.send('VKWebAppGetUserInfo');
                     if (vkUser && vkUser.id && supabase) {
                         btn.innerText = 'БАЗА: ВХОД...';
-                        
                         const vkEmail = `vk_${vkUser.id}@travel-in-lens.ru`;
-                        // НОВЫЙ БЕЗОПАСНЫЙ ПАРОЛЬ
+                        // МЕНЯЕМ ПАРОЛЬ НА НОВЫЙ БЕЗОПАСНЫЙ
                         const vkPass = `vktravel_${vkUser.id}_secure`; 
                         
                         let { data, error } = await supabase.auth.signInWithPassword({ email: vkEmail, password: vkPass });
@@ -249,8 +248,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function handleLoginSuccess(u) {
         currentUser = u;
+        // Скрываем модалку, если она была открыта
         const modal = document.getElementById('auth-modal'); if(modal) modal.style.display='none';
+        // Показываем панель инструментов
         const panel = document.getElementById('user-panel'); if(panel) panel.style.display='flex';
+        // ОБЯЗАТЕЛЬНО скрываем кнопку PRO ВХОД
+        const btn = document.getElementById('btn-pro-auth'); if(btn) btn.style.display = 'none';
     }
 
     function openSaveModal() {
