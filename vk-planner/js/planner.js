@@ -355,6 +355,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
   async function saveAsJPG() {
+        // --- 1. Реклама ---
         await showVKAd(); 
         await new Promise(r => setTimeout(r, 500));
         
@@ -367,28 +368,24 @@ document.addEventListener('DOMContentLoaded', async function() {
             const mapEl = document.getElementById('map');
             const wasMapHidden = !document.body.classList.contains('show-map');
             
-            // Сохраняем ТОЛЬКО ширину, не ломая позиционирование
-            const origWidth = mapEl.style.width;
-
-            // ФИКС РАЗМЕРА: Делаем ширину 800px, чтобы не было черных полос на ПК
-            mapEl.style.width = '800px';
-            
+            // Если мы на мобильном и карта скрыта - временно показываем
             if (window.innerWidth <= 900 && wasMapHidden) {
                 document.body.classList.add('show-map'); 
+                setTimeout(() => map.invalidateSize(), 100);
+                await new Promise(r => setTimeout(r, 1000));
+            } else {
+                await new Promise(r => setTimeout(r, 800));
             }
-            
-            // Заставляем карту обновиться в новом размере безопасно
-            setTimeout(() => map.invalidateSize(), 10);
-            await new Promise(r => setTimeout(r, 800));
 
+            // --- 2. Центрируем карту (без изменения её ширины!) ---
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                // Это центрирует маршрут и синхронизирует оранжевую линию с точками!
                 map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); 
                 await new Promise(r => setTimeout(r, 800)); 
             }
 
+            // --- 3. Делаем снимок карты как есть ---
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, 
                 scale: 1.5, 
@@ -397,22 +394,61 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') 
             });
 
-            // ВОЗВРАЩАЕМ КАК БЫЛО
-            mapEl.style.width = origWidth;
+            // Прячем карту обратно на мобильном, если она была скрыта
             if (window.innerWidth <= 900 && wasMapHidden) {
                 document.body.classList.remove('show-map');
-            } else {
-                map.invalidateSize();
             }
 
-            // --- ТВОЯ ОРИГИНАЛЬНАЯ ИДЕАЛЬНАЯ ТАБЛИЦА С 9 КОЛОНКАМИ ---
+            // --- 4. Формируем 9-колоночную таблицу ---
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
-            const reportDiv = document.createElement('div');
-            reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
-            reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
-            reportDiv.innerHTML = `<div style="padding:20px;"><h2 style="margin:0 0 15px;">${name}</h2><img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;"><table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;"><tr style="background:#FF5722; color:white;"><th style="padding:10px; text-align:left;">Город</th><th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th><th style="padding:10px;">Бензин</th><th style="padding:10px;">Жилье</th><th style="padding:10px;">Еда</th><th style="padding:10px;">Досуг</th><th style="padding:10px;">Сув.</th><th style="padding:10px;">Итого</th></tr>${body.map((row, i) => `<tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;"><td style="padding:8px; font-weight:bold;">${row[0]}</td><td style="padding:8px; text-align:center;">${row[1]}</td><td style="padding:8px; text-align:center;">${row[2]}</td><td style="padding:8px; text-align:center;">${row[3] !== '-' ? row[3] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[4] !== '-' ? row[4] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[5] !== '-' ? row[5] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[6] !== '-' ? row[6] + ' ₽' : '-'}</td><td style="padding:8px; text-align:center;">${row[7] !== '-' ? row[7] + ' ₽' : '-'}</td><td style="padding:8px; text-align:right; font-weight:bold; color:#FF5722;">${row[8] !== '-' ? row[8] + ' ₽' : '-'}</td></tr>`).join('')}<tr style="background:#333; color:white; font-weight:bold;"><td style="padding:10px;">ВСЕГО</td><td style="padding:10px; text-align:center;">${footer[1]}</td><td style="padding:10px; text-align:center;">${footer[2]}</td><td style="padding:10px; text-align:center;">${footer[3]} ₽</td><td style="padding:10px; text-align:center;">${footer[4]} ₽</td><td style="padding:10px; text-align:center;">${footer[5]} ₽</td><td style="padding:10px; text-align:center;">${footer[6]} ₽</td><td style="padding:10px; text-align:center;">${footer[7]} ₽</td><td style="padding:10px; text-align:right; color:#FF5722; font-size:14px;">${grandTotal.toLocaleString()} ₽</td></tr></table><div style="margin-top:20px; text-align:right; color:#888; font-size:12px;">travel-in-lens.ru</div></div>`;
+            const reportDiv = document.createElement('div');
+            reportDiv.style.position = 'fixed'; 
+            reportDiv.style.left = '-9999px'; 
+            reportDiv.style.top = '0'; 
+            reportDiv.style.width = '800px'; 
+            reportDiv.style.background = '#fff'; 
+            reportDiv.style.fontFamily = 'Arial, sans-serif';
+            
+            reportDiv.innerHTML = `
+                <div style="padding:20px;">
+                    <h2 style="margin:0 0 15px; color:#000; font-family: 'Russo One', sans-serif;">${name}</h2>
+                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.9)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px; display:block;">
+                    <table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;">
+                        <tr style="background:#FF5722; color:white;">
+                            <th style="padding:10px; text-align:left;">Город</th>
+                            <th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th>
+                            <th style="padding:10px;">Бензин</th><th style="padding:10px;">Жилье</th>
+                            <th style="padding:10px;">Еда</th><th style="padding:10px;">Досуг</th>
+                            <th style="padding:10px;">Сув.</th><th style="padding:10px;">Итого</th>
+                        </tr>
+                        ${body.map((row, i) => `
+                            <tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;">
+                                <td style="padding:8px; font-weight:bold;">${row[0]}</td>
+                                <td style="padding:8px; text-align:center;">${row[1]}</td>
+                                <td style="padding:8px; text-align:center;">${row[2]}</td>
+                                <td style="padding:8px; text-align:center;">${row[3] !== '-' ? row[3] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[4] !== '-' ? row[4] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[5] !== '-' ? row[5] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[6] !== '-' ? row[6] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:center;">${row[7] !== '-' ? row[7] + ' ₽' : '-'}</td>
+                                <td style="padding:8px; text-align:right; font-weight:bold; color:#FF5722;">${row[8] !== '-' ? row[8] + ' ₽' : '-'}</td>
+                            </tr>`).join('')}
+                        <tr style="background:#333; color:white; font-weight:bold;">
+                            <td style="padding:10px;">ИТОГО</td>
+                            <td style="padding:10px; text-align:center;">${footer[1]}</td>
+                            <td style="padding:10px; text-align:center;">${footer[2]}</td>
+                            <td style="padding:10px; text-align:center;">${footer[3]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[4]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[5]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[6]} ₽</td>
+                            <td style="padding:10px; text-align:center;">${footer[7]} ₽</td>
+                            <td style="padding:10px; text-align:right; color:#FF5722; font-size:14px;">${grandTotal.toLocaleString()} ₽</td>
+                        </tr>
+                    </table>
+                    <div style="margin-top:20px; text-align:right; color:#888; font-size:11px;">travel-in-lens.ru</div>
+                </div>`;
             
             document.body.appendChild(reportDiv);
             const finalCanvas = await html2canvas(reportDiv, { scale: 1 });
@@ -420,7 +456,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             finalCanvas.toBlob(async (blob) => {
                 if(!blob) return; const file = new File([blob], "travel.jpg", { type: "image/jpeg" });
-                if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: [file] })) {
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                     try { await navigator.share({ files: [file] }); return; } catch (err) {}
                 }
                 const link = document.createElement('a'); link.download = "travel.jpg"; link.href = URL.createObjectURL(blob);
