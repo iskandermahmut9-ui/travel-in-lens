@@ -37,8 +37,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 } catch (authErr) { console.log("Ошибка ВК:", authErr); btn.innerText = 'ПРОФИЛЬ'; }
             }, 1000);
-                } catch (authErr) { console.log("Ошибка ВК:", authErr); btn.innerText = 'ПРОФИЛЬ'; }
-            }, 1000);
         }
     } catch (e) { console.log("VK Bridge не загружен", e); }
 
