@@ -355,115 +355,98 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
    async function saveAsJPG() {
-        await showVKAd(); 
-        await new Promise(r => setTimeout(r, 500));
-        const btn = document.getElementById('btn-export'); 
-        if (!btn) return;
-        const oldIcon = btn.innerHTML; 
+        const btn = document.activeElement; 
+        const oldIcon = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
+            const ua = navigator.userAgent;
+            const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+            
             const mapEl = document.getElementById('map');
-            
-            // 1. Запоминаем текущий вид
-            const oldWidth = mapEl.style.width;
-            const oldPos = mapEl.style.position;
-            const oldTransform = mapEl.style.transform;
-
-            // 2. Делаем карту ровно 800px для снимка (как и вся таблица)
-            mapEl.style.width = '800px'; 
-            mapEl.style.position = 'relative';
-            mapEl.style.transform = 'none';
-            map.invalidateSize(); 
-
-            // Центрируем маршрут
-            if (waypoints.length > 0) {
-                const group = new L.featureGroup(waypoints.map(p => p.marker));
-                if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [40, 40], animate: false });
-            }
-            
-            // Ждем чуть дольше, чтобы Leaflet отрисовал тайлы в новом размере
-            await new Promise(r => setTimeout(r, 1000)); 
+            await new Promise(r => setTimeout(r, 800));
 
             const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true, 
-                scale: 2, // Качество повыше
+                useCORS: true,       
+                scale: 1.5,
+                allowTaint: false,
                 backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
 
-            // 3. СРАЗУ возвращаем как было, чтобы пользователь не заметил скачка
-            mapEl.style.width = oldWidth;
-            mapEl.style.position = oldPos;
-            mapEl.style.transform = oldTransform;
-            map.invalidateSize();
-
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
-            
+
             const reportDiv = document.createElement('div');
-            reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
-            reportDiv.style.width = '800px'; // Совпадает с картой!
-            reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
+            reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
+            reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
-                    <h2 style="margin:0 0 15px; color:#000;">${name}</h2>
+                    <h2 style="margin:0 0 15px;">${name}</h2>
                     <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;">
-                    <table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;">
+                    <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
                             <th style="padding:10px; text-align:left;">Город</th>
                             <th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th>
-                            <th style="padding:10px;">Бензин</th><th style="padding:10px;">Жилье</th>
-                            <th style="padding:10px;">Еда</th><th style="padding:10px;">Досуг</th>
-                            <th style="padding:10px;">Сув.</th><th style="padding:10px;">Итого</th>
+                            <th style="padding:10px;">Итого</th>
                         </tr>
                         ${body.map((row, i) => `
                             <tr style="background:${i%2===0?'#fff':'#f9f9f9'}; border-bottom:1px solid #eee;">
                                 <td style="padding:8px; font-weight:bold;">${row[0]}</td>
                                 <td style="padding:8px; text-align:center;">${row[1]}</td>
                                 <td style="padding:8px; text-align:center;">${row[2]}</td>
-                                <td style="padding:8px; text-align:center;">${row[3] !== '-' ? row[3] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:center;">${row[4] !== '-' ? row[4] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:center;">${row[5] !== '-' ? row[5] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:center;">${row[6] !== '-' ? row[6] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:center;">${row[7] !== '-' ? row[7] + ' ₽' : '-'}</td>
-                                <td style="padding:8px; text-align:right; font-weight:bold; color:#FF5722;">${row[8] !== '-' ? row[8] + ' ₽' : '-'}</td>
-                            </tr>`).join('')}
+                                <td style="padding:8px; text-align:right;">${row[8]} ₽</td>
+                            </tr>
+                        `).join('')}
                         <tr style="background:#333; color:white; font-weight:bold;">
                             <td style="padding:10px;">ВСЕГО</td>
                             <td style="padding:10px; text-align:center;">${footer[1]}</td>
                             <td style="padding:10px; text-align:center;">${footer[2]}</td>
-                            <td style="padding:10px; text-align:center;">${footer[3]} ₽</td>
-                            <td style="padding:10px; text-align:center;">${footer[4]} ₽</td>
-                            <td style="padding:10px; text-align:center;">${footer[5]} ₽</td>
-                            <td style="padding:10px; text-align:center;">${footer[6]} ₽</td>
-                            <td style="padding:10px; text-align:center;">${footer[7]} ₽</td>
-                            <td style="padding:10px; text-align:right; color:#FF5722; font-size:14px;">${grandTotal.toLocaleString()} ₽</td>
+                            <td style="padding:10px; text-align:right;">${grandTotal.toLocaleString()} ₽</td>
                         </tr>
                     </table>
-                    <div style="text-align:right; color:#888; font-size:10px; margin-top:5px;">travel-in-lens.ru</div>
-                </div>`;
-            
+                    <div style="margin-top:20px; text-align:right; color:#888; font-size:12px;">travel-in-lens.ru</div>
+                </div>
+            `;
             document.body.appendChild(reportDiv);
+
             const finalCanvas = await html2canvas(reportDiv, { scale: 1 });
             document.body.removeChild(reportDiv);
 
+            const fileName = "travel-in-lens.ru.jpg";
+
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) return; 
-                const file = new File([blob], "travel.jpg", { type: "image/jpeg" });
-                if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try { await navigator.share({ files: [file] }); return; } catch (err) {}
+                if(!blob) { alert("Ошибка: Память переполнена"); return; }
+                const file = new File([blob], fileName, { type: "image/jpeg" });
+
+                if (isMobileOS) {
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Маршрут',
+                                text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
+                            });
+                            return; 
+                        } catch (err) {}
+                    }
+                    showImagePopup(finalCanvas.toDataURL('image/jpeg', 0.9));
+                } else {
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = URL.createObjectURL(blob);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                 }
-                const link = document.createElement('a'); link.download = "travel.jpg"; link.href = URL.createObjectURL(blob);
-                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+
             }, 'image/jpeg', 0.85);
-            
-        } catch (e) { 
-            showToast("Ошибка сохранения: " + e.message); 
-        } finally { 
-            btn.innerHTML = oldIcon; 
+
+        } catch (e) {
+            alert("Ошибка сохранения: " + e.message);
+        } finally {
+            btn.innerHTML = oldIcon;
         }
     }
 
