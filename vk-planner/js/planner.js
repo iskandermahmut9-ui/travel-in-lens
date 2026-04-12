@@ -364,7 +364,31 @@ document.addEventListener('DOMContentLoaded', async function() {
             const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
             
             const mapEl = document.getElementById('map');
-            await new Promise(r => setTimeout(r, 800));
+
+            // --- ШАГ 1: ФИКСИРУЕМ РАЗМЕР КАРТЫ ДЛЯ СНИМКА ---
+            const oldWidth = mapEl.style.width;
+            const oldHeight = mapEl.style.height;
+            const oldPos = mapEl.style.position;
+            const oldTransform = mapEl.style.transform;
+
+            // Принудительно делаем карту 800px, чтобы она заполнила всё место в таблице
+            mapEl.style.width = '800px'; 
+            mapEl.style.height = '500px'; 
+            mapEl.style.position = 'relative';
+            mapEl.style.transform = 'none';
+            
+            // Заставляем карту пересчитать свои границы под 800px
+            if (map) map.invalidateSize(); 
+
+            // Центрируем маршрут перед снимком
+            if (waypoints.length > 0) {
+                const group = new L.featureGroup(waypoints.map(p => p.marker));
+                if (routeLayer) group.addLayer(routeLayer);
+                map.fitBounds(group.getBounds(), { padding: [40, 40], animate: false });
+            }
+
+            // Ждем чуть дольше, чтобы тайлы карты прогрузились в новом размере
+            await new Promise(r => setTimeout(r, 1200));
 
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true,       
@@ -373,6 +397,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                 backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
+
+            // --- ШАГ 2: СРАЗУ ВОЗВРАЩАЕМ КАРТУ В ПРЕЖНИЙ ВИД ---
+            mapEl.style.width = oldWidth;
+            mapEl.style.height = oldHeight;
+            mapEl.style.position = oldPos;
+            mapEl.style.transform = oldTransform;
+            if (map) map.invalidateSize();
+            // -----------------------------------------------
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
@@ -383,7 +415,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
-                    <h2 style="margin:0 0 15px;">${name}</h2>
+                    <h2 style="margin:0 0 15px; color:#000;">${name}</h2>
                     <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;">
                     <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
@@ -431,15 +463,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                             return; 
                         } catch (err) {}
                     }
-                    showImagePopup(finalCanvas.toDataURL('image/jpeg', 0.9));
-                } else {
-                    const link = document.createElement('a');
-                    link.download = fileName;
-                    link.href = URL.createObjectURL(blob);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    // Если не сработал share — скачиваем обычным способом
                 }
+                
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
 
             }, 'image/jpeg', 0.85);
 
