@@ -354,8 +354,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         return { body, footer: ['ВСЕГО', tDays, tDist.toFixed(0), tFuel, tStay, tFood, tExc, tSouv, gTotal], grandTotal: gTotal };
     }
 
-   async function saveAsJPG() {
-        // --- 1. РЕКЛАМА (ВОЗВРАЩЕНА) ---
+  async function saveAsJPG() {
+        // --- 1. РЕКЛАМА (КАК ТЫ И ПРОСИЛ) ---
         await showVKAd(); 
         await new Promise(r => setTimeout(r, 500));
 
@@ -365,33 +365,35 @@ document.addEventListener('DOMContentLoaded', async function() {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
+            const ua = navigator.userAgent;
+            const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
             const mapEl = document.getElementById('map');
             
-            // Запоминаем текущие настройки для возврата
+            // --- 2. ФИКСАЦИЯ РАЗМЕРОВ (ЧТОБЫ НЕ БЫЛО СДВИГА) ---
             const oldWidth = mapEl.style.width;
             const oldHeight = mapEl.style.height;
             const oldPos = mapEl.style.position;
             const oldTransform = mapEl.style.transform;
 
-            // ШАГ 1: ФИКСИРУЕМ РАЗМЕР И ОБЯЗАТЕЛЬНО ЖДЕМ
+            // Устанавливаем четкий размер для снимка
             mapEl.style.width = '800px'; 
-            mapEl.style.height = '500px'; 
+            mapEl.style.height = '550px'; 
             mapEl.style.position = 'relative';
             mapEl.style.transform = 'none';
             
-            // Принудительно заставляем карту "пересобраться" под 800px
+            // Оповещаем карту об изменении размера БЕЗ анимации
             if (map) {
-                map.invalidateSize(false); 
+                map.invalidateSize({ pan: false, animate: false });
                 if (waypoints.length > 0) {
                     const group = new L.featureGroup(waypoints.map(p => p.marker));
                     if (routeLayer) group.addLayer(routeLayer);
-                    // Центрируем точки в новом окне 800px
+                    // Центрируем всё строго в кадре 800px
                     map.fitBounds(group.getBounds(), { padding: [50, 50], animate: false });
                 }
             }
 
-            // КРИТИЧЕСКИЙ МОМЕНТ: ждем 1.5 секунды, чтобы маршрут "приклеился" к новым координатам
-            await new Promise(r => setTimeout(r, 1500));
+            // ВАЖНО: Ждем 1.2 секунды, чтобы SVG-линия маршрута "приклеилась" к новым координатам
+            await new Promise(r => setTimeout(r, 1200));
 
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, 
@@ -400,24 +402,24 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
 
-            // ШАГ 2: СРАЗУ ВОЗВРАЩАЕМ КАК БЫЛО
+            // ВОЗВРАЩАЕМ КАК БЫЛО ДЛЯ ПОЛЬЗОВАТЕЛЯ
             mapEl.style.width = oldWidth;
             mapEl.style.height = oldHeight;
             mapEl.style.position = oldPos;
             mapEl.style.transform = oldTransform;
-            if (map) map.invalidateSize(false);
+            if (map) map.invalidateSize({ pan: false, animate: false });
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
-            
+
             const reportDiv = document.createElement('div');
             reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
-                    <h2 style="margin:0 0 15px; color:#000;">${name}</h2>
-                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px; display:block;">
+                    <h2 style="margin:0 0 15px; color:#000; font-family: 'Russo One', sans-serif;">${name}</h2>
+                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.9)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px; display:block;">
                     <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
                             <th style="padding:10px; text-align:left;">Город</th>
@@ -446,20 +448,30 @@ document.addEventListener('DOMContentLoaded', async function() {
             document.body.removeChild(reportDiv);
 
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) return; 
+                if(!blob) return;
                 const file = new File([blob], "travel-in-lens.ru.jpg", { type: "image/jpeg" });
-                if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try { await navigator.share({ files: [file], title: 'Мой маршрут' }); return; } catch (err) {}
+
+                if (isMobileOS && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: 'Мой маршрут' });
+                        return;
+                    } catch (err) {}
                 }
-                const link = document.createElement('a'); link.download = "travel-in-lens.ru.jpg"; link.href = URL.createObjectURL(blob);
-                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                
+                const link = document.createElement('a');
+                link.download = "travel-in-lens.ru.jpg";
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
             }, 'image/jpeg', 0.9);
-            
-        } catch (e) { 
+
+        } catch (e) {
             console.error(e);
-            showToast("Ошибка сохранения!"); 
-        } finally { 
-            btn.innerHTML = oldIcon; 
+            showToast("Ошибка сохранения!");
+        } finally {
+            btn.innerHTML = oldIcon;
         }
     }
 
