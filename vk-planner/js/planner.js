@@ -355,72 +355,66 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
    async function saveAsJPG() {
-        const btn = document.activeElement; 
+        // --- 1. ВЕРНУЛИ РЕКЛАМУ ПЕРЕД СКАЧИВАНИЕМ ---
+        await showVKAd(); 
+        await new Promise(r => setTimeout(r, 500));
+
+        const btn = document.getElementById('btn-export'); 
+        if (!btn) return;
         const oldIcon = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
             const ua = navigator.userAgent;
             const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-            
             const mapEl = document.getElementById('map');
-
-            // --- ШАГ 1: ФИКСИРУЕМ РАЗМЕР КАРТЫ ДЛЯ СНИМКА ---
-            const oldWidth = mapEl.style.width;
-            const oldHeight = mapEl.style.height;
-            const oldPos = mapEl.style.position;
-            const oldTransform = mapEl.style.transform;
-
-            // Принудительно делаем карту 800px, чтобы она заполнила всё место в таблице
-            mapEl.style.width = '800px'; 
-            mapEl.style.height = '500px'; 
-            mapEl.style.position = 'relative';
-            mapEl.style.transform = 'none';
             
-            // Заставляем карту пересчитать свои границы под 800px
-            if (map) map.invalidateSize(); 
+            // --- 2. ФИКС ЧЕРНОГО БЛОКА ---
+            // Если мы на мобилке и карта скрыта — временно показываем её для снимка
+            const wasMapHidden = !document.body.classList.contains('show-map');
+            if (isMobileOS && wasMapHidden) {
+                document.body.classList.add('show-map');
+                if(map) map.invalidateSize();
+                await new Promise(r => setTimeout(r, 500));
+            }
 
-            // Центрируем маршрут перед снимком
+            // Центрируем все точки, чтобы ничего не "убегало"
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [40, 40], animate: false });
+                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false });
+                await new Promise(r => setTimeout(r, 800)); 
             }
 
-            // Ждем чуть дольше, чтобы тайлы карты прогрузились в новом размере
-            await new Promise(r => setTimeout(r, 1200));
-
             const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true,       
-                scale: 1.5,
-                allowTaint: false,
+                useCORS: true, 
+                scale: 2, // Повышаем качество для четкости
                 backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
 
-            // --- ШАГ 2: СРАЗУ ВОЗВРАЩАЕМ КАРТУ В ПРЕЖНИЙ ВИД ---
-            mapEl.style.width = oldWidth;
-            mapEl.style.height = oldHeight;
-            mapEl.style.position = oldPos;
-            mapEl.style.transform = oldTransform;
-            if (map) map.invalidateSize();
-            // -----------------------------------------------
+            // Возвращаем мобильный вид как был
+            if (isMobileOS && wasMapHidden) {
+                document.body.classList.remove('show-map');
+            }
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
 
+            // Создаем невидимый блок для финальной картинки
             const reportDiv = document.createElement('div');
-            reportDiv.style.position = 'fixed'; reportDiv.style.left = '0'; reportDiv.style.top = '0'; reportDiv.style.zIndex = '-999';
+            reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
             
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
-                    <h2 style="margin:0 0 15px; color:#000;">${name}</h2>
-                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px;">
+                    <h2 style="margin:0 0 15px; color:#000; font-family: 'Russo One', sans-serif;">${name}</h2>
+                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.9)}" style="width:100%; border:1px solid #ddd; margin-bottom:20px; display:block;">
                     <table style="width:100%; border-collapse: collapse; font-size:14px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
                             <th style="padding:10px; text-align:left;">Город</th>
-                            <th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th>
+                            <th style="padding:10px;">Дни</th>
+                            <th style="padding:10px;">Км</th>
                             <th style="padding:10px;">Итого</th>
                         </tr>
                         ${body.map((row, i) => `
@@ -429,45 +423,34 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 <td style="padding:8px; text-align:center;">${row[1]}</td>
                                 <td style="padding:8px; text-align:center;">${row[2]}</td>
                                 <td style="padding:8px; text-align:right;">${row[8]} ₽</td>
-                            </tr>
-                        `).join('')}
+                            </tr>`).join('')}
                         <tr style="background:#333; color:white; font-weight:bold;">
                             <td style="padding:10px;">ВСЕГО</td>
                             <td style="padding:10px; text-align:center;">${footer[1]}</td>
                             <td style="padding:10px; text-align:center;">${footer[2]}</td>
-                            <td style="padding:10px; text-align:right;">${grandTotal.toLocaleString()} ₽</td>
+                            <td style="padding:10px; text-align:right; font-size:16px; color:#FF5722;">${grandTotal.toLocaleString()} ₽</td>
                         </tr>
                     </table>
                     <div style="margin-top:20px; text-align:right; color:#888; font-size:12px;">travel-in-lens.ru</div>
-                </div>
-            `;
+                </div>`;
+            
             document.body.appendChild(reportDiv);
-
             const finalCanvas = await html2canvas(reportDiv, { scale: 1 });
             document.body.removeChild(reportDiv);
 
-            const fileName = "travel-in-lens.ru.jpg";
-
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) { alert("Ошибка: Память переполнена"); return; }
-                const file = new File([blob], fileName, { type: "image/jpeg" });
+                if(!blob) return;
+                const file = new File([blob], "travel.jpg", { type: "image/jpeg" });
 
-                if (isMobileOS) {
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                files: [file],
-                                title: 'Маршрут',
-                                text: `Бюджет: ${grandTotal.toLocaleString()} ₽`
-                            });
-                            return; 
-                        } catch (err) {}
-                    }
-                    // Если не сработал share — скачиваем обычным способом
+                if (isMobileOS && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: 'Мой маршрут' });
+                        return;
+                    } catch (err) {}
                 }
                 
                 const link = document.createElement('a');
-                link.download = fileName;
+                link.download = "travel.jpg";
                 link.href = URL.createObjectURL(blob);
                 document.body.appendChild(link);
                 link.click();
@@ -476,7 +459,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             }, 'image/jpeg', 0.85);
 
         } catch (e) {
-            alert("Ошибка сохранения: " + e.message);
+            console.error(e);
+            showToast("Ошибка сохранения!");
         } finally {
             btn.innerHTML = oldIcon;
         }
