@@ -84,6 +84,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     if(listEl) new Sortable(listEl, { handle: '.drag-handle', animation: 150, onEnd: (evt) => moveWaypoint(evt.oldIndex, evt.newIndex) });
 
     const bind = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
+    // --- ЗАЩИТА ОТ XSS (САНИТАЙЗЕР) ---
+    function escapeHTML(str) {
+        if (!str) return '';
+        const p = document.createElement('p');
+        p.textContent = str;
+        return p.innerHTML;
+    }
     bind('btn-login-action', handleAuth);
     bind('btn-save-modal', openSaveModal);
     bind('btn-save-confirm', saveAsNew); 
@@ -281,21 +288,37 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     async function openRoutesModal() {
-        document.getElementById('routes-modal').style.display='flex';
-        const list = document.getElementById('routes-list-container'); list.innerHTML = 'Загрузка...';
-        const { data } = await supabase.from('routes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
-        list.innerHTML = '';
-        if(data && data.length) {
-            data.forEach(r => {
-                const el = document.createElement('div'); el.className = 'route-item';
-                el.innerHTML = `<div class="route-info"><div class="route-name">${r.name}</div><div class="route-date">${new Date(r.created_at).toLocaleDateString()}</div></div>
-                    <div class="route-actions"><button class="btn-load-route" data-id="${r.id}">Загрузить</button><button class="btn-del-route" data-id="${r.id}"><i class="fa-solid fa-trash"></i></button></div>`;
-                el.querySelector('.btn-load-route').onclick = () => loadRoute(r);
-                el.querySelector('.btn-del-route').onclick = () => deleteRoute(r.id);
-                list.appendChild(el);
-            });
-        } else list.innerHTML = 'Нет маршрутов';
+    document.getElementById('routes-modal').style.display='flex';
+    const list = document.getElementById('routes-list-container'); 
+    list.innerHTML = 'Загрузка...';
+    
+    const { data } = await supabase.from('routes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+    list.innerHTML = '';
+    
+    if(data && data.length) {
+        data.forEach(r => {
+            const el = document.createElement('div'); 
+            el.className = 'route-item';
+            
+            // В строке ниже мы добавили escapeHTML(r.name) вместо просто r.name
+            el.innerHTML = `
+                <div class="route-info">
+                    <div class="route-name">${escapeHTML(r.name)}</div>
+                    <div class="route-date">${new Date(r.created_at).toLocaleDateString()}</div>
+                </div>
+                <div class="route-actions">
+                    <button class="btn-load-route" data-id="${r.id}">Загрузить</button>
+                    <button class="btn-del-route" data-id="${r.id}"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+                
+            el.querySelector('.btn-load-route').onclick = () => loadRoute(r);
+            el.querySelector('.btn-del-route').onclick = () => deleteRoute(r.id);
+            list.appendChild(el);
+        });
+    } else {
+        list.innerHTML = 'Нет маршрутов';
     }
+}
 
     async function deleteRoute(id) { showCustomConfirm("Удалить этот маршрут навсегда?", async () => { await supabase.from('routes').delete().eq('id', id); openRoutesModal(); }); }
 
