@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
   async function saveAsJPG() {
-        // --- 1. РЕКЛАМА (КАК ТЫ И ПРОСИЛ) ---
+        // --- РЕКЛАМА (ВОЗВРАЩЕНА) ---
         await showVKAd(); 
         await new Promise(r => setTimeout(r, 500));
 
@@ -365,35 +365,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
-            const ua = navigator.userAgent;
-            const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
             const mapEl = document.getElementById('map');
             
-            // --- 2. ФИКСАЦИЯ РАЗМЕРОВ (ЧТОБЫ НЕ БЫЛО СДВИГА) ---
+            // Запоминаем текущие настройки
             const oldWidth = mapEl.style.width;
             const oldHeight = mapEl.style.height;
             const oldPos = mapEl.style.position;
             const oldTransform = mapEl.style.transform;
 
-            // Устанавливаем четкий размер для снимка
+            // 1. ФИКСИРУЕМ РАЗМЕР: карта должна быть 800px, как и весь отчет
             mapEl.style.width = '800px'; 
-            mapEl.style.height = '550px'; 
-            mapEl.style.position = 'relative';
+            mapEl.style.height = '500px'; 
+            mapEl.style.position = 'fixed';
+            mapEl.style.left = '0';
+            mapEl.style.top = '0';
+            mapEl.style.zIndex = '9999';
             mapEl.style.transform = 'none';
             
-            // Оповещаем карту об изменении размера БЕЗ анимации
+            // 2. ЗАСТАВЛЯЕМ КАРТУ ПЕРЕРИСОВАТЬСЯ ПОД 800px
             if (map) {
-                map.invalidateSize({ pan: false, animate: false });
+                map.invalidateSize({ animate: false }); 
                 if (waypoints.length > 0) {
                     const group = new L.featureGroup(waypoints.map(p => p.marker));
                     if (routeLayer) group.addLayer(routeLayer);
-                    // Центрируем всё строго в кадре 800px
+                    // Центрируем точки в новом размере 800px
                     map.fitBounds(group.getBounds(), { padding: [50, 50], animate: false });
                 }
             }
 
-            // ВАЖНО: Ждем 1.2 секунды, чтобы SVG-линия маршрута "приклеилась" к новым координатам
-            await new Promise(r => setTimeout(r, 1200));
+            // КРИТИЧЕСКИЙ МОМЕНТ: ждем 1.5 секунды, чтобы SVG-линия (маршрут) "приклеилась" к новым координатам
+            await new Promise(r => setTimeout(r, 1500));
 
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, 
@@ -402,16 +403,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom')
             });
 
-            // ВОЗВРАЩАЕМ КАК БЫЛО ДЛЯ ПОЛЬЗОВАТЕЛЯ
+            // 3. ВОЗВРАЩАЕМ КАК БЫЛО ДЛЯ ИНТЕРФЕЙСА
             mapEl.style.width = oldWidth;
             mapEl.style.height = oldHeight;
             mapEl.style.position = oldPos;
             mapEl.style.transform = oldTransform;
-            if (map) map.invalidateSize({ pan: false, animate: false });
+            if (map) map.invalidateSize({ animate: false });
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
-
+            
             const reportDiv = document.createElement('div');
             reportDiv.style.position = 'fixed'; reportDiv.style.left = '-9999px'; reportDiv.style.top = '0';
             reportDiv.style.width = '800px'; reportDiv.style.background = '#fff'; reportDiv.style.fontFamily = 'Arial, sans-serif';
@@ -448,30 +449,22 @@ document.addEventListener('DOMContentLoaded', async function() {
             document.body.removeChild(reportDiv);
 
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) return;
-                const file = new File([blob], "travel-in-lens.ru.jpg", { type: "image/jpeg" });
-
-                if (isMobileOS && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({ files: [file], title: 'Мой маршрут' });
-                        return;
-                    } catch (err) {}
-                }
+                if(!blob) return; 
+                const file = new File([blob], "travel.jpg", { type: "image/jpeg" });
+                const isMobileOS = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
                 
-                const link = document.createElement('a');
-                link.download = "travel-in-lens.ru.jpg";
-                link.href = URL.createObjectURL(blob);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
+                if (isMobileOS && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try { await navigator.share({ files: [file] }); return; } catch (err) {}
+                }
+                const link = document.createElement('a'); link.download = "travel.jpg"; link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
             }, 'image/jpeg', 0.9);
-
-        } catch (e) {
+            
+        } catch (e) { 
             console.error(e);
-            showToast("Ошибка сохранения!");
-        } finally {
-            btn.innerHTML = oldIcon;
+            showToast("Ошибка сохранения!"); 
+        } finally { 
+            btn.innerHTML = oldIcon; 
         }
     }
 
