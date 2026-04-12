@@ -22,7 +22,7 @@
 
 <header class="header">
     <div class="header-left">
-        <a href="https://travel-in-lens.ru/" class="logo">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ 🎥</a>
+        <div class="logo">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ 🎥</div>
     </div>
     <div class="header-center"></div>
     <div class="header-right">
@@ -30,40 +30,38 @@
             <button class="tool-btn" id="btn-mobile-settings" title="Настройки"><i class="fa-solid fa-gear"></i></button>
             <button class="tool-btn" id="btn-routes" title="Мои маршруты"><i class="fa-solid fa-folder-open"></i></button>
             <button class="tool-btn" id="btn-save-modal" title="Сохранить"><i class="fa-solid fa-cloud-arrow-up"></i></button>
+            <button class="tool-btn" id="btn-share-img" title="Отправить"><i class="fa-solid fa-share-nodes"></i></button>
             <button class="tool-btn" id="btn-export" title="Скачать JPG"><i class="fa-solid fa-image"></i></button>
-            <button class="tool-btn" id="btn-share-vk" title="Поделиться в Истории"><i class="fa-brands fa-vk"></i></button>
+            <button class="tool-btn" id="btn-logout" title="Выход"><i class="fa-solid fa-sign-out"></i></button>
         </div>
+        <button id="btn-pro-auth" class="btn-pro">PRO ВХОД</button>
+        <a href="https://travel-in-lens.ru/" class="btn-home-style"><i class="fa-solid fa-house"></i><span>НА ГЛАВНУЮ</span></a>
     </div>
 </header>
+
+<div class="transport-tabs">
+    <div class="tab active">АВТОМОБИЛЬ</div>
+    <div class="tab">ПОЕЗД</div>
+    <div class="tab">САМОЛЕТ</div>
+</div>
 
 <div class="main-container">
     <div class="sidebar">
         <div class="settings-col" id="settings-panel">
-            <div class="mobile-onboarding-text">
-                <i class="fa-solid fa-circle-info" style="margin-right: 5px;"></i>
-                Перед началом планирования маршрута настройте базовые параметры поездки.
-            </div>
-            
             <div>
-                <div class="input-group"><label>РАСХОД (Л/100КМ)</label><input type="number" id="g-consumption" min="0" value="10"></div>
-                <div class="input-group"><label>ТОПЛИВО (₽/Л)</label><input type="number" id="g-fuel" min="0" value="65"></div>
-                <div class="input-group"><label>ЛЮДЕЙ (ЧЕЛ)</label><input type="number" id="g-people" min="1" value="2"></div>
+                <h3>Автомобиль</h3>
+                <div class="input-group"><label>РАСХОД (Л/100КМ)</label><input type="number" id="g-consumption" value="10"></div>
+                <div class="input-group"><label>ТОПЛИВО (₽/Л)</label><input type="number" id="g-fuel" value="55"></div>
+                <div class="input-group"><label>ЛЮДЕЙ (ЧЕЛ)</label><input type="number" id="g-people" value="2" min="1"></div>
             </div>
             <div>
                 <h3>Базовые цены</h3>
-                <div class="input-group"><label>ЖИЛЬЕ (СУТКИ)</label><input type="number" id="g-stay" min="0" value="3000"></div>
-                <div class="input-group"><label>ЕДА (ДЕНЬ/ЧЕЛ)</label><input type="number" id="g-food" min="0" value="1500"></div>
-                <div class="input-group"><label>ЭКСКУРСИЯ (ЧЕЛ)</label><input type="number" id="g-excursions" min="0" value="1000"></div>
-                <div class="input-group"><label>СУВЕНИРЫ (ВСЕГО)</label><input type="number" id="g-souvenirs" min="0" value="2000"></div>
+                <div class="input-group"><label>ЖИЛЬЕ (СУТКИ)</label><input type="number" id="g-stay" value="3000"></div>
+                <div class="input-group"><label>ЕДА (ДЕНЬ/ЧЕЛ)</label><input type="number" id="g-food" value="1500"></div>
+                <div class="input-group"><label>ЭКСКУРСИЯ (ЧЕЛ)</label><input type="number" id="g-excursions" value="1000"></div>
+                <div class="input-group"><label>СУВЕНИРЫ (ВСЕГО)</label><input type="number" id="g-souvenirs" value="2000"></div>
             </div>
-            
             <button class="settings-apply-btn" id="btn-apply-settings">ПРИМЕНИТЬ</button>
-
-            <div class="vk-promo-links promo-desktop">
-                <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-group"><i class="fa-brands fa-vk" style="font-size: 16px;"></i> Сообщество</a>
-                <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-dev"><i class="fa-solid fa-code"></i> Разработчик</a>
-            </div>
-            <div class="promo-desktop" style="text-align: center; font-size: 9px; color: #555; margin-top: 10px; width: 100%;">© 2026 by AL☰X</div>
         </div>
 
         <div class="route-col">
@@ -91,15 +89,13 @@
                     <div class="fd-item">🎫 <span id="s-exc">0</span></div>
                     <div class="fd-item">🎁 <span id="s-souv">0</span></div>
                 </div>
-                
-                <div class="vk-links-mobile promo-mobile">
-                    <a href="https://vk.com/travel_in_lens" target="_blank" class="btn-vk-min btn-vk-min-group"><i class="fa-brands fa-vk"></i> Сообщество</a>
-                    <a href="https://vk.com/gavrilenko_alexander" target="_blank" class="btn-vk-min btn-vk-min-dev"><i class="fa-solid fa-code"></i> Разработчик</a>
+                <div class="dev-links">
+                    <a href="https://by-alex.ru/" target="_blank">© 2026 by AL☰X</a>
+                    <a href="https://t.me/GavAlexandr" target="_blank">Связаться с разработчиком</a>
                 </div>
             </div>
         </div>
     </div>
-    
     <div id="map"></div>
 </div>
 
@@ -110,40 +106,32 @@
 <div id="auth-modal" class="modal-overlay">
     <div class="modal-box">
         <div class="modal-head">ВХОД / РЕГИСТРАЦИЯ</div>
-        <p style="font-size: 13px; color: #aaa; margin-bottom: 20px;">Для сохранения маршрутов и создания историй необходима авторизация.</p>
+        <input type="email" class="modal-inp" id="auth-email" placeholder="Email">
+        <input type="password" class="modal-inp" id="auth-pass" placeholder="Пароль">
         <button class="btn-login" id="btn-login-action">ПРОДОЛЖИТЬ</button>
-        <div class="close-modal" id="btn-close-auth">Закрыть</div>
+        <div class="close-modal" id="btn-close-auth">Отмена</div>
     </div>
 </div>
 
 <div id="save-modal" class="modal-overlay">
     <div class="modal-box">
         <div class="modal-head">СОХРАНИТЬ МАРШРУТ</div>
-        <input type="text" class="modal-inp" id="route-name-inp" placeholder="Название (например: На море 2026)">
-        <button class="btn-login" id="btn-save-confirm">СОХРАНИТЬ КАК НОВЫЙ</button>
-        <button class="btn-login" id="btn-save-update" style="background:#333; margin-top:10px; display:none;">ОБНОВИТЬ ТЕКУЩИЙ</button>
+        <input type="text" class="modal-inp" id="route-name-inp" placeholder="Название маршрута">
+        <button class="btn-login" id="btn-save-confirm">СОХРАНИТЬ НОВЫЙ</button>
+        <button class="btn-login" id="btn-save-update" style="background:#444; margin-top:10px; display:none">ПЕРЕЗАПИСАТЬ</button>
         <div class="close-modal" onclick="document.getElementById('save-modal').style.display='none'">Отмена</div>
     </div>
 </div>
 
 <div id="routes-modal" class="modal-overlay">
-    <div class="modal-box" style="max-width: 600px;">
+    <div class="modal-box" style="width: 500px;">
         <div class="modal-head">МОИ МАРШРУТЫ</div>
-        <div class="routes-list" id="routes-list-container"><div style="padding:20px; color:#666">Загрузка...</div></div>
+        <div class="routes-list" id="routes-list-container">
+            <div style="padding:20px; color:#666">Загрузка...</div>
+        </div>
         <div class="close-modal" id="btn-close-routes">Закрыть</div>
     </div>
 </div>
-
-<div id="confirm-modal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-head">Подтверждение</div>
-        <div id="confirm-text" style="margin-bottom: 20px;"></div>
-        <button class="btn-login" id="btn-confirm-yes">Да</button>
-        <button class="btn-login" id="btn-confirm-no" style="background:#444; margin-top:10px;">Отмена</button>
-    </div>
-</div>
-
-<div id="toast-container" class="toast-container"></div>
 
 <script src="js/planner.js"></script>
 </body>
