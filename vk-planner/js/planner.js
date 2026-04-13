@@ -1,9 +1,27 @@
 document.addEventListener('DOMContentLoaded', async function() {
     console.log("Planner JS: VK Mini App Ready");
 
+    // --- ФИКС: УНИВЕРСАЛЬНАЯ БЛОКИРОВКА МИНУСОВ, "E" И ДЛИННЫХ ЧИСЕЛ ---
+    // (Чинит сразу 5+ багов)
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('keydown', function(e) {
+            if (['e', 'E', '-', '+'].includes(e.key)) e.preventDefault();
+        });
+        input.addEventListener('input', function() {
+            if (this.value.length > 7) this.value = this.value.slice(0, 7);
+            if (this.value < 0) this.value = 0;
+        });
+    });
+    // ------------------------------------------------------------------
+
     try {
         if (window.vkBridge) {
             vkBridge.send('VKWebAppInit');
+            
+            // --- ФИКС: ОТКЛЮЧАЕМ ЗАКРЫТИЕ ПО СВАЙПУ (Отчет 13) ---
+            vkBridge.send("VKWebAppEnableSwipeBack"); 
+            // -----------------------------------------------------
+
             vkBridge.subscribe((e) => {
                 if (e.detail.type === 'VKWebAppUpdateConfig') {
                     const scheme = e.detail.data.scheme ? e.detail.data.scheme : 'client_light';
@@ -17,21 +35,27 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             setTimeout(async () => {
                 const btn = document.getElementById('btn-pro-auth');
-                if(!btn) return; // Теперь кнопка в HTML есть, и скрипт пойдет дальше
+                if(!btn) return;
                 try {
                     btn.innerText = 'ВК: ПРОВЕРКА...';
                     const vkUser = await vkBridge.send('VKWebAppGetUserInfo');
                     if (vkUser && vkUser.id && supabase) {
                         btn.innerText = 'БАЗА: ВХОД...';
                         const vkEmail = `vk_${vkUser.id}@travel-in-lens.ru`;
-                        // МЕНЯЕМ ПАРОЛЬ НА НОВЫЙ БЕЗОПАСНЫЙ
                         const vkPass = `vktravel_${vkUser.id}_secure`; 
                         
                         let { data, error } = await supabase.auth.signInWithPassword({ email: vkEmail, password: vkPass });
                         if (error) {
                             let { data: regData, error: regError } = await supabase.auth.signUp({ email: vkEmail, password: vkPass });
                             if (!regError && regData.user) handleLoginSuccess(regData.user);
-                            else { showToast("Ошибка: " + regError.message); btn.innerText = 'ПРОФИЛЬ'; }
+                            else { 
+                                // --- ФИКС: ПЕРЕВОД ОШИБКИ ПАРОЛЯ (Отчет 1) ---
+                                let msg = regError.message;
+                                if(msg.includes('at least 6 characters')) msg = 'Пароль должен быть не менее 6 символов';
+                                showToast("Ошибка: " + msg); 
+                                // ---------------------------------------------
+                                btn.innerText = 'ПРОФИЛЬ'; 
+                            }
                         } else handleLoginSuccess(data.user);
                     }
                 } catch (authErr) { console.log("Ошибка ВК:", authErr); btn.innerText = 'ПРОФИЛЬ'; }
@@ -39,7 +63,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     } catch (e) { console.log("VK Bridge не загружен", e); }
 
-    let map = null, supabase = null, currentUser = null, waypoints = [], routeLayer = null, currentRouteId = null; 
+    let map = null, supabase = null, currentUser = null, waypoints = [], routeLayer = null, currentRouteId = null;
     
     if (window.innerWidth <= 900) document.getElementById('settings-panel').classList.add('active');
 
@@ -66,6 +90,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         const container = L.DomUtil.get('map'); if(container != null) container._leaflet_id = null;
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView([55.75, 37.61], 6);
+        map.options.minZoom = 3; // Не даем отдалить карту слишком сильно
+    map.setMaxBounds([
+        [-90, -180],
+        [90, 180]
+    ]);
         L.control.zoom({position: 'topright'}).addTo(map);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { crossOrigin: 'anonymous' }).addTo(map);
         map.on('click', async (e) => { await addPoint(e.latlng.lat, e.latlng.lng); });
@@ -165,9 +194,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function getAddress(lat, lng) {
         try {
-            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=10`);
+            // ФИКС: Добавили accept-language=ru и расширили поиск по тегам
+            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=10&accept-language=ru`);
             const d = await r.json();
-            return d.address.city || d.address.town || d.address.village || `Точка`;
+            return d.address.city || d.address.town || d.address.village || d.address.county || d.address.state || `Точка`;
         } catch { return 'Координаты'; }
     }
 
@@ -236,12 +266,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function handleAuth() {
         if(!supabase) return;
-        const e = document.getElementById('auth-email').value, p = document.getElementById('auth-pass').value;
+        // В оригинале у тебя нет полей auth-email и auth-pass в index.html для ручного входа, 
+        // но если эта функция вызывается, защитим её переводом:
+        const e = document.getElementById('auth-email') ? document.getElementById('auth-email').value : '';
+        const p = document.getElementById('auth-pass') ? document.getElementById('auth-pass').value : '';
+        
         let { data, error } = await supabase.auth.signInWithPassword({ email:e, password:p });
         if(error) {
             if(confirm("Создать новый аккаунт?")) {
                 const { data:d2, error:e2 } = await supabase.auth.signUp({ email:e, password:p });
-                if(!e2) { showToast("Успешно!"); handleLoginSuccess(d2.user); } else showToast(e2.message);
+                if(!e2) { 
+                    showToast("Успешно!"); 
+                    handleLoginSuccess(d2.user); 
+                } else { 
+                    // ФИКС ПЕРЕВОДА ОШИБКИ
+                    let msg = e2.message;
+                    if(msg.includes('at least 6 characters')) msg = 'Пароль должен быть не менее 6 символов';
+                    showToast("Ошибка: " + msg); 
+                }
             }
         } else handleLoginSuccess(data.user);
     }
