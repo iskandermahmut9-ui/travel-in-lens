@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async function() {
         console.log("Planner JS: VK Mini App Ready");
 
-        // --- ФИКС: УНИВЕРСАЛЬНАЯ БЛОКИРОВКА МИНУСОВ, "E" И ДЛИННЫХ ЧИСЕЛ ---
+        // --- ФИКС: УНИВЕРСАЛЬНАЯ БЛОКИРОВКА МИНУСОВ, "E", ДЛИННЫХ И ПУСТЫХ ЧИСЕЛ ---
         document.querySelectorAll('input[type="number"]').forEach(input => {
             // ВОТ ЭТА СТРОКА ОТКЛЮЧАЕТ СТРЕЛОЧКУ "ВНИЗ" НА НУЛЕ:
             input.setAttribute('min', '0'); 
@@ -9,9 +9,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             input.addEventListener('keydown', function(e) {
                 if (['e', 'E', '-', '+'].includes(e.key)) e.preventDefault();
             });
+            
             input.addEventListener('input', function() {
                 if (this.value.length > 7) this.value = this.value.slice(0, 7);
                 if (this.value < 0) this.value = 0;
+            });
+
+            // ФИКС ДЛЯ 2-ГО БАГА (Защита от пустоты):
+            input.addEventListener('blur', function() {
+                if (this.value.trim() === '') this.value = '0';
             });
         });
     // ------------------------------------------------------------------
@@ -71,9 +77,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     window.showToast = function(msg) {
         const container = document.getElementById('toast-container'); if(!container) return;
+        
+        // ФИКС: Удаляем все старые тосты перед показом нового
+        document.querySelectorAll('.toast').forEach(t => t.remove());
+
         const toast = document.createElement('div'); toast.className = 'toast'; toast.innerText = msg;
         container.appendChild(toast); setTimeout(() => toast.remove(), 3000);
-    };
+};
 
     window.showCustomConfirm = function(msg, onYes) {
         document.getElementById('confirm-text').innerText = msg;
@@ -168,7 +178,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function addPoint(lat, lng, manualName = null) {
         const id = Date.now();
-        const pt = { id, lat, lng, name: manualName || "...", days: 1, dist: 0, costs: { stay: v('g-stay'), food: v('g-food'), exc: v('g-excursions'), souv: v('g-souvenirs') }, marker: L.marker([lat, lng], {draggable: true}).addTo(map) };
+        
+        // ВНИМАНИЕ: Проверь, чтобы 'g-stay', 'g-food', 'g-excursions', 'g-souvenirs' 
+        // ТОЧНО совпадали с ID этих полей в твоем HTML-файле!
+        const pt = { 
+            id, lat, lng, name: manualName || "...", days: 1, dist: 0, 
+            costs: { 
+                stay: v('g-stay') || 0, 
+                food: v('g-food') || 0, 
+                exc: v('g-excursions') || 0, 
+                souv: v('g-souvenirs') || 0 
+            }, 
+            marker: L.marker([lat, lng], {draggable: true}).addTo(map) 
+        };
 
         pt.marker.on('dragend', async (e) => {
             const pos = e.target.getLatLng(); pt.lat=pos.lat; pt.lng=pos.lng;
