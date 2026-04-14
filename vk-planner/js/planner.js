@@ -90,6 +90,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         const container = L.DomUtil.get('map'); if(container != null) container._leaflet_id = null;
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView([55.75, 37.61], 6);
+        // Пинч для карты, чтобы она не вылезала за края при первой загрузке
+    setTimeout(() => { if (map) map.invalidateSize(); }, 800);
         map.options.minZoom = 3; // Не даем отдалить карту слишком сильно
     map.setMaxBounds([
         [-90, -180],
@@ -185,10 +187,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&accept-language=ru`);
             const d = await r.json();
-            if (d[0]) {
+            if (d && d.length > 0 && d[0]) {
                 map.setView([d[0].lat, d[0].lon], 10);
                 await addPoint(parseFloat(d[0].lat), parseFloat(d[0].lon), d[0].display_name.split(',')[0]);
-            } else showToast("Город не найден");
+                
+                // --- ФИКС ДЛЯ ПОДСКАЗКИ ПРИ НЕОДНОЗНАЧНОМ ПОИСКЕ ---
+                // Если API нашло больше одного города с таким названием, показываем подсказку
+                if (d.length > 1) {
+                    setTimeout(() => showToast("Если адрес неверен, то дополнительно укажите страну, область, район, населенный пункт."), 1000);
+                }
+                
+            } else {
+                showToast("Данный населенный пункт не найден. Для уточнения укажите страну, область, район, населенный пункт.");
+            }
         } catch(e) { showToast("Ошибка сети. Проверьте интернет."); }
     }
 
@@ -547,7 +558,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             if (window.vkBridge) await vkBridge.send("VKWebAppShowStoryBox", { background_type: "image", blob: base64Img, attachment: { text: "open", type: "url", url: "https://vk.com/app54486894" } });
             else showToast("Публикация доступна только внутри ВК");
-        } catch (e) { console.error(e); showToast("Ошибка создания истории"); } 
+        } catch (e) { 
+            console.error("Шеринг отменен или ошибка:", e); 
+            // Показываем тост только если ВК вернул реальную текстовую ошибку
+            if (e && e.error_data && e.error_data.error_reason) {
+                showToast("Ошибка: " + e.error_data.error_reason);
+            }
+        } 
         finally { btn.innerHTML = oldIcon; }
     }
 });
