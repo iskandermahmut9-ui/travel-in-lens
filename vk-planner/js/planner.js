@@ -148,6 +148,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     bind('btn-mobile-settings', () => document.getElementById('settings-panel').classList.add('active'));
     
     bind('btn-apply-settings', () => { 
+        // ФИКС: Защита от спам-кликов
+        const btn = document.getElementById('btn-apply-settings');
+        if (btn) {
+            btn.disabled = true;
+            setTimeout(() => btn.disabled = false, 1000);
+        }
+
         document.getElementById('settings-panel').classList.remove('active'); 
         updateVisuals();
         if(window.innerWidth > 900) showToast("Настройки применены!");
