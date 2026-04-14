@@ -274,23 +274,44 @@ document.addEventListener('DOMContentLoaded', async function() {
         waypoints.forEach((p, i) => {
             const isStart = i === 0;
             const div = document.createElement('div'); div.className = `waypoint-card ${isStart?'start':'point'}`; div.setAttribute('data-id', p.id);
-            let h = `<div class="card-header-row"><div class="name-wrapper"><span class="drag-handle">⋮⋮</span><input id="nm-${p.id}" class="city-name-input" value="${p.name}" autocomplete="off" maxlength="40"></div><button class="btn-del" data-idx="${i}" title="Удалить">×</button></div>`;
+            
+            // ФИКС: Везде заменили хрупкий data-idx="${i}" на надежный уникальный data-id="${p.id}"
+            let h = `<div class="card-header-row"><div class="name-wrapper"><span class="drag-handle">⋮⋮</span><input id="nm-${p.id}" class="city-name-input" value="${p.name}" autocomplete="off" maxlength="40"></div><button class="btn-del" data-id="${p.id}" title="Удалить">×</button></div>`;
             if(!isStart) {
                 h = `<div class="road-info">🚗 <span id="ds-${p.id}">0</span> км | ⛽ <span id="fl-${p.id}">0</span> ₽</div>` + h;
-                h += `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;"><label style="margin:0;">СУТОК:</label><input type="number" value="${p.days}" style="width:60px; padding:6px; text-align:center;" class="inp-days" data-idx="${i}"></div>
+                h += `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;"><label style="margin:0;">СУТОК:</label><input type="number" value="${p.days}" style="width:60px; padding:6px; text-align:center;" class="inp-days" data-id="${p.id}"></div>
                       <div class="wp-inputs-grid">
-                        <div><label>ЖИЛЬЕ</label><input type="number" value="${p.costs.stay}" class="inp-cost" data-idx="${i}" data-k="stay"></div>
-                        <div><label>ЕДА</label><input type="number" value="${p.costs.food}" class="inp-cost" data-idx="${i}" data-k="food"></div>
-                        <div><label>ЭКСКУРСИЯ</label><input type="number" value="${p.costs.exc}" class="inp-cost" data-idx="${i}" data-k="exc"></div>
-                        <div><label>СУВЕНИРЫ</label><input type="number" value="${p.costs.souv}" class="inp-cost" data-idx="${i}" data-k="souv"></div>
+                        <div><label>ЖИЛЬЕ</label><input type="number" value="${p.costs.stay}" class="inp-cost" data-id="${p.id}" data-k="stay"></div>
+                        <div><label>ЕДА</label><input type="number" value="${p.costs.food}" class="inp-cost" data-id="${p.id}" data-k="food"></div>
+                        <div><label>ЭКСКУРСИЯ</label><input type="number" value="${p.costs.exc}" class="inp-cost" data-id="${p.id}" data-k="exc"></div>
+                        <div><label>СУВЕНИРЫ</label><input type="number" value="${p.costs.souv}" class="inp-cost" data-id="${p.id}" data-k="souv"></div>
                       </div><div class="stage-summary"><div class="stage-total-line">Этап: <span id="st-${p.id}">0</span> ₽</div></div>`;
             } else { h += `<div style="font-size:10px; color:#666; margin-left:10px;">Начало маршрута</div>`; }
             div.innerHTML = h; c.appendChild(div);
         });
-        document.querySelectorAll('.btn-del').forEach(b => b.onclick = () => { map.removeLayer(waypoints[b.dataset.idx].marker); waypoints.splice(b.dataset.idx, 1); updateRoute().then(renderList); });
+
+        // ФИКС: Обработчики теперь ищут элементы по уникальному ID
+        document.querySelectorAll('.btn-del').forEach(b => b.onclick = () => { 
+            const idx = waypoints.findIndex(w => w.id == b.dataset.id);
+            if (idx > -1) {
+                map.removeLayer(waypoints[idx].marker); 
+                waypoints.splice(idx, 1); 
+                updateRoute().then(renderList); 
+            }
+        });
+        
         document.querySelectorAll('.city-name-input').forEach(inp => inp.onchange = function() { const id = this.id.split('-')[1]; const pt = waypoints.find(w=>w.id==id); if(pt){ pt.name=this.value; pt.marker.bindPopup(this.value); } });
-        document.querySelectorAll('.inp-days').forEach(inp => inp.oninput = function() { waypoints[this.dataset.idx].days = parseInt(this.value)||1; updateVisuals(); });
-        document.querySelectorAll('.inp-cost').forEach(inp => inp.oninput = function() { waypoints[this.dataset.idx].costs[this.dataset.k] = parseInt(this.value)||0; updateVisuals(); });
+        
+        document.querySelectorAll('.inp-days').forEach(inp => inp.oninput = function() { 
+            const pt = waypoints.find(w => w.id == this.dataset.id);
+            if(pt) { pt.days = parseInt(this.value)||1; updateVisuals(); }
+        });
+        
+        document.querySelectorAll('.inp-cost').forEach(inp => inp.oninput = function() { 
+            const pt = waypoints.find(w => w.id == this.dataset.id);
+            if(pt) { pt.costs[this.dataset.k] = parseInt(this.value)||0; updateVisuals(); }
+        });
+        
         updateVisuals();
     }
 
