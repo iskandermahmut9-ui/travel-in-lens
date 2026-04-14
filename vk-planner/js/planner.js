@@ -1,17 +1,19 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log("Planner JS: VK Mini App Ready");
+        console.log("Planner JS: VK Mini App Ready");
 
-    // --- ФИКС: УНИВЕРСАЛЬНАЯ БЛОКИРОВКА МИНУСОВ, "E" И ДЛИННЫХ ЧИСЕЛ ---
-    // (Чинит сразу 5+ багов)
-    document.querySelectorAll('input[type="number"]').forEach(input => {
-        input.addEventListener('keydown', function(e) {
-            if (['e', 'E', '-', '+'].includes(e.key)) e.preventDefault();
+        // --- ФИКС: УНИВЕРСАЛЬНАЯ БЛОКИРОВКА МИНУСОВ, "E" И ДЛИННЫХ ЧИСЕЛ ---
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            // ВОТ ЭТА СТРОКА ОТКЛЮЧАЕТ СТРЕЛОЧКУ "ВНИЗ" НА НУЛЕ:
+            input.setAttribute('min', '0'); 
+            
+            input.addEventListener('keydown', function(e) {
+                if (['e', 'E', '-', '+'].includes(e.key)) e.preventDefault();
+            });
+            input.addEventListener('input', function() {
+                if (this.value.length > 7) this.value = this.value.slice(0, 7);
+                if (this.value < 0) this.value = 0;
+            });
         });
-        input.addEventListener('input', function() {
-            if (this.value.length > 7) this.value = this.value.slice(0, 7);
-            if (this.value < 0) this.value = 0;
-        });
-    });
     // ------------------------------------------------------------------
 
     try {
