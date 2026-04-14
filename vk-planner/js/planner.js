@@ -185,8 +185,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function addBySearch() {
         const q = document.getElementById('city-search').value.trim(); if(!q) return;
+        
+        // --- ФИКС ДЛЯ БУКВ И ЦИФР ---
+        // Блокируем запросы короче 2 символов и те, что состоят только из цифр
+        if (q.length < 2 || /^\d+$/.test(q)) { 
+            showToast("Введите корректное название населенного пункта"); 
+            return; 
+        }
+
         document.getElementById('city-search').value = '';
         try {
+            // ... дальше идет fetch
             const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&accept-language=ru`);
             const d = await r.json();
             if (d && d.length > 0 && d[0]) {
