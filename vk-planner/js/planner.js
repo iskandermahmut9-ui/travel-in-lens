@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         waypoints.forEach((p, i) => {
             const isStart = i === 0;
             const div = document.createElement('div'); div.className = `waypoint-card ${isStart?'start':'point'}`; div.setAttribute('data-id', p.id);
-            let h = `<div class="card-header-row"><div class="name-wrapper"><span class="drag-handle">⋮⋮</span><input id="nm-${p.id}" class="city-name-input" value="${p.name}" autocomplete="off"></div><button class="btn-del" data-idx="${i}" title="Удалить">×</button></div>`;
+            let h = `<div class="card-header-row"><div class="name-wrapper"><span class="drag-handle">⋮⋮</span><input id="nm-${p.id}" class="city-name-input" value="${p.name}" autocomplete="off" maxlength="40"></div><button class="btn-del" data-idx="${i}" title="Удалить">×</button></div>`;
             if(!isStart) {
                 h = `<div class="road-info">🚗 <span id="ds-${p.id}">0</span> км | ⛽ <span id="fl-${p.id}">0</span> ₽</div>` + h;
                 h += `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;"><label style="margin:0;">СУТОК:</label><input type="number" value="${p.days}" style="width:60px; padding:6px; text-align:center;" class="inp-days" data-idx="${i}"></div>
