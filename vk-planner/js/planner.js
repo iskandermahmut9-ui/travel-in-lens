@@ -596,13 +596,26 @@ document.addEventListener('DOMContentLoaded', async function() {
             finalCanvas.toBlob(async (blob) => {
                 if(!blob) { showToast("Ошибка создания файла"); return; } 
                 const file = new File([blob], "travel-in-lens.ru.jpg", { type: "image/jpeg" });
+                const url = URL.createObjectURL(blob);
                 
-                // 1. Пытаемся вызвать системное окно "Поделиться" (работает на Android и новых iOS)
+                // Проверяем, с телефона ли сидит пользователь
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+
+                // ЕСЛИ ЭТО ПК - ПРОСТО СКАЧИВАЕМ (как было раньше, никаких всплывающих окон)
+                if (!isMobile) {
+                    const link = document.createElement('a'); 
+                    link.download = "travel-in-lens.ru.jpg"; 
+                    link.href = url;
+                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                    return;
+                }
+
+                // ДЛЯ МОБИЛОК: Пробуем системное меню "Поделиться"
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                     try { await navigator.share({ files: [file] }); return; } catch (err) {}
                 }
                 
-                // 2. ЕСЛИ НЕ ВЫШЛО (Айфон заблокировал скачивание): Показываем картинку на экране!
+                // ДЛЯ МОБИЛОК: Если "Поделиться" заблокировано (iOS VK), показываем окно
                 const overlay = document.createElement('div');
                 overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; overflow-y:auto; padding:20px 0;';
                 
@@ -612,8 +625,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 closeBtn.onclick = () => document.body.removeChild(overlay);
                 
                 const img = document.createElement('img');
-                img.src = URL.createObjectURL(blob);
-                img.style.cssText = 'width:90%; max-width:800px; border:1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5);';
+                img.src = url;
+                // ФИКС "УДЕРЖАНИЯ ПАЛЬЦА": Снимаем блокировки выделения, наложенные ВКонтакте
+                img.style.cssText = 'width:90%; max-width:800px; border:1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto;';
                 
                 const helpText = document.createElement('div');
                 helpText.innerHTML = "Удерживайте палец на изображении, чтобы сохранить его в галерею";
@@ -667,25 +681,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const expensesRow = footer[3] === '-' && footer[4] === '-' && footer[5] === '-' && footer[6] === '-' && footer[7] === '-' ? '' : `<div style="display: flex; justify-content: space-around; font-size: 32px; font-weight: bold; color: #FF5722; margin-bottom: 50px;">${footer[3] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">⛽</span> ${footer[3]} ₽</div>` : ''}${footer[4] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🏠</span> ${footer[4]} ₽</div>` : ''}${footer[5] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🍔</span> ${footer[5]} ₽</div>` : ''}${footer[6] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎫</span> ${footer[6]} ₽</div>` : ''}${footer[7] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎁</span> ${footer[7]} ₽</div>` : ''}</div>`;
             const waypointRows = body.length === 0 ? '<div style="text-align:center; color:#888; padding: 20px 0;">Маршрут пока пуст</div>' : body.slice(0, 6).map(row => `<div style="display: flex; align-items: center; justify-content: space-between; font-size: 36px; padding: 25px 0; border-bottom: 1px solid #2a2a2a;"><div style="display: flex; align-items: center; max-width: 75%;"><span style="font-size: 28px; color: #FF5722; margin-right: 20px;"><i class="fa-solid fa-location-dot"></i></span><span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${row[0]}</span></div><span style="color: #FF5722; font-weight: 900; font-size: 40px;">${row[8]} ₽</span></div>`).join('');
 
-            storyDiv.innerHTML = `<div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;">
-                <div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">${name}</div>
-                <div style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; margin-bottom: 60px;">
-                    <span style="font-size: 32px; color: #aaa; margin-right: 15px;">Бюджет</span>
-                    <span style="font-size: 48px; font-weight: 900; color: #FF5722;">${grandTotal.toLocaleString()} ₽</span>
-                </div>
-                
-                <img src="${imgData}" style="width: 100%; height: auto; border-radius: 40px; border: 4px solid #333; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); display: block;">
-                
-                ${expensesRow}
-                <div style="background: rgba(255, 255, 255, 0.03); border-radius: 30px; padding: 40px 50px; border: 2px solid #333;">
-                    <div style="font-size: 28px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px;">Остановки</div>
-                    ${waypointRows}
-                    ${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:30px; font-size: 28px; font-style: italic;">и еще ${body.length - 6} точек...</div>` : ''}
-                </div>
-                <div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666; padding-top: 50px;">
-                    Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span>
-                </div>
-            </div>`;
+            storyDiv.innerHTML = `<div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;"><div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">${name}</div><div style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; margin-bottom: 60px;"><span style="font-size: 32px; color: #aaa; margin-right: 15px;">Бюджет</span><span style="font-size: 48px; font-weight: 900; color: #FF5722;">${grandTotal.toLocaleString()} ₽</span></div><img src="${imgData}" style="width: 100%; height: 600px; object-fit: cover; object-position: center; border-radius: 40px; border: 4px solid #333; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); display: block;">${expensesRow}<div style="background: rgba(255, 255, 255, 0.03); border-radius: 30px; padding: 40px 50px; border: 2px solid #333;"><div style="font-size: 28px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px;">Остановки</div>${waypointRows}${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:30px; font-size: 28px; font-style: italic;">и еще ${body.length - 6} точек...</div>` : ''}</div><div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666; padding-top: 50px;">Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span></div></div>`;
             document.body.appendChild(storyDiv);
 
             const finalCanvas = await html2canvas(storyDiv, { scale: 1, backgroundColor: null, windowWidth: 1080, windowHeight: 1920, useCORS: true, logging: false });
