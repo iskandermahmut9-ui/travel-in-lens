@@ -495,28 +495,23 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         try {
             const mapEl = document.getElementById('map');
-            const wasMapHidden = !document.body.classList.contains('show-map');
-            
-            // Если мобилка и карта скрыта - показываем
-            if (window.innerWidth <= 900 && wasMapHidden) {
-                document.body.classList.add('show-map'); 
-                setTimeout(() => map.invalidateSize(), 100); 
-                await new Promise(r => setTimeout(r, 1000));
-            } else {
-                await new Promise(r => setTimeout(r, 500));
-            }
+            // ФИКС ФОРМАТА: Сохраняем оригинальные стили карты
+            const origCss = mapEl.style.cssText;
 
-            // Центрируем карту
+            // Временно делаем саму карту вертикальной (пропорции телефона), чтобы сгенерировать красивый постер
+            mapEl.style.cssText = 'position: absolute; top: 0; left: 0; width: 800px; height: 1100px; z-index: 9999;';
+            map.invalidateSize();
+
+            // Центрируем карту в новых пропорциях
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); 
-                // Ждем прогрузки всех тайлов
-                await new Promise(r => setTimeout(r, 2500)); 
+                map.fitBounds(group.getBounds(), { padding: [40, 40], animate: false }); 
+                // Ждем прогрузки всех тайлов в новом размере
+                await new Promise(r => setTimeout(r, 2000)); 
             }
 
-            // --- ФИКС ЧЕРНОГО КВАДРАТА (Хак для html2canvas) ---
-            // Временно переводим translate3d в обычные координаты, чтобы скриншотер не обрезал Canvas
+            // Хак для черного квадрата (отключаем translate3d)
             const panes = document.querySelectorAll('.leaflet-pane');
             const transforms = [];
             panes.forEach(pane => {
@@ -532,7 +527,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
 
-            // Делаем снимок чистой карты
+            // Делаем снимок ИДЕАЛЬНОЙ вертикальной карты
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, 
                 scale: 1.5, 
@@ -547,13 +542,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 item.el.style.left = '0px';
                 item.el.style.top = '0px';
             });
-            // ------------------------------------------------
+            
+            // Возвращаем карте нормальный вид на сайте
+            mapEl.style.cssText = origCss;
+            map.invalidateSize();
 
+            const wasMapHidden = !document.body.classList.contains('show-map');
             if (window.innerWidth <= 900 && wasMapHidden) {
                 document.body.classList.remove('show-map');
             }
 
-            // Сборка таблицы и финального холста
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
             
@@ -565,12 +563,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             reportDiv.style.background = '#fff'; 
             reportDiv.style.fontFamily = 'Arial, sans-serif';
             
-            // --- ФИКС ФОРМАТА (КАК НА 12.JPG) ---
-            // Добавлено height: 900px и object-fit: cover, чтобы карта ВСЕГДА была правильной вертикальной формы
+            // В img src убрано принудительное искажение
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
                     <h2 style="margin:0 0 15px; color:#000; font-family: 'Russo One', sans-serif;">${name}</h2>
-                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.9)}" style="width:100%; height:900px; object-fit:cover; border:1px solid #ddd; margin-bottom:20px; display:block;">
+                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.9)}" style="width:100%; height:auto; border:1px solid #ddd; margin-bottom:20px; display:block;">
                     <table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
                             <th style="padding:10px; text-align:left;">Город</th><th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th>

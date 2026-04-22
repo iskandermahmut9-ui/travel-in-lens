@@ -232,3 +232,21 @@ input[type="number"] {
     overflow-wrap: break-word !important;
     word-break: break-word !important;
 }
+/* ФИКС: Защита списка от наезда скроллбара */
+#list-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px; /* Отступ спасает крестики удаления от перекрытия */
+}
+
+/* Стилизуем скроллбар, чтобы он был тонким и красивым */
+#list-content::-webkit-scrollbar {
+    width: 6px;
+}
+#list-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+#list-content::-webkit-scrollbar-thumb {
+    background-color: #FF5722;
+    border-radius: 10px;
+}
