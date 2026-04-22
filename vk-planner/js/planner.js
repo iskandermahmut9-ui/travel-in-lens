@@ -484,10 +484,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
   async function saveAsJPG() {
-        // Реклама
-        await showVKAd(); 
-        await new Promise(r => setTimeout(r, 500));
-        
         const btn = document.getElementById('btn-export'); 
         if (!btn) return;
         const oldIcon = btn.innerHTML; 
@@ -495,79 +491,39 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         try {
             const mapEl = document.getElementById('map');
-            // ФИКС ФОРМАТА: Сохраняем оригинальные стили карты
-            const origCss = mapEl.style.cssText;
+            const wasMapHidden = !document.body.classList.contains('show-map');
+            
+            if (window.innerWidth <= 900 && wasMapHidden) {
+                document.body.classList.add('show-map'); 
+                setTimeout(() => map.invalidateSize(), 100); 
+                await new Promise(r => setTimeout(r, 600)); // Ускорили загрузку окна
+            }
 
-            // Временно делаем саму карту вертикальной (пропорции телефона), чтобы сгенерировать красивый постер
-            mapEl.style.cssText = 'position: absolute; top: 0; left: 0; width: 800px; height: 1100px; z-index: 9999;';
-            map.invalidateSize();
-
-            // Центрируем карту в новых пропорциях
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [40, 40], animate: false }); 
-                // Ждем прогрузки всех тайлов в новом размере
-                await new Promise(r => setTimeout(r, 2000)); 
+                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); 
+                await new Promise(r => setTimeout(r, 800)); // ФИКС ТОРМОЗОВ: Ждем 0.8 сек вместо 2.5!
             }
 
-            // Хак для черного квадрата (отключаем translate3d)
-            const panes = document.querySelectorAll('.leaflet-pane');
-            const transforms = [];
-            panes.forEach(pane => {
-                const t = pane.style.transform;
-                if (t && t.includes('translate3d')) {
-                    const match = t.match(/translate3d\(([-.\d]+)px,\s*([-.\d]+)px/);
-                    if (match) {
-                        transforms.push({ el: pane, transform: t });
-                        pane.style.transform = 'none';
-                        pane.style.left = match[1] + 'px';
-                        pane.style.top = match[2] + 'px';
-                    }
-                }
-            });
-
-            // Делаем снимок ИДЕАЛЬНОЙ вертикальной карты
+            // Убрали искусственное завышение качества, чтобы телефоны не висли
             const mapCanvas = await html2canvas(mapEl, { 
-                useCORS: true, 
-                scale: 1.5, 
-                allowTaint: false, 
-                backgroundColor: '#ffffff', 
+                useCORS: true, scale: window.devicePixelRatio || 1, allowTaint: false, backgroundColor: '#ffffff', 
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') 
             });
 
-            // Возвращаем стили Leaflet обратно
-            transforms.forEach(item => {
-                item.el.style.transform = item.transform;
-                item.el.style.left = '0px';
-                item.el.style.top = '0px';
-            });
-            
-            // Возвращаем карте нормальный вид на сайте
-            mapEl.style.cssText = origCss;
-            map.invalidateSize();
-
-            const wasMapHidden = !document.body.classList.contains('show-map');
-            if (window.innerWidth <= 900 && wasMapHidden) {
-                document.body.classList.remove('show-map');
-            }
+            if (window.innerWidth <= 900 && wasMapHidden) document.body.classList.remove('show-map');
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут";
             
             const reportDiv = document.createElement('div');
-            reportDiv.style.position = 'fixed'; 
-            reportDiv.style.left = '-9999px'; 
-            reportDiv.style.top = '0'; 
-            reportDiv.style.width = '800px'; 
-            reportDiv.style.background = '#fff'; 
-            reportDiv.style.fontFamily = 'Arial, sans-serif';
+            reportDiv.style.cssText = 'position:fixed; left:-9999px; top:0; width:800px; background:#fff; font-family:Arial, sans-serif;';
             
-            // В img src убрано принудительное искажение
             reportDiv.innerHTML = `
                 <div style="padding:20px;">
                     <h2 style="margin:0 0 15px; color:#000; font-family: 'Russo One', sans-serif;">${name}</h2>
-                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.9)}" style="width:100%; height:auto; border:1px solid #ddd; margin-bottom:20px; display:block;">
+                    <img src="${mapCanvas.toDataURL('image/jpeg', 0.8)}" style="width:100%; height:auto; border:1px solid #ddd; margin-bottom:20px; display:block;">
                     <table style="width:100%; border-collapse: collapse; font-size:12px; color:#000;">
                         <tr style="background:#FF5722; color:white;">
                             <th style="padding:10px; text-align:left;">Город</th><th style="padding:10px;">Дни</th><th style="padding:10px;">Км</th>
@@ -594,31 +550,29 @@ document.addEventListener('DOMContentLoaded', async function() {
             document.body.removeChild(reportDiv);
 
             finalCanvas.toBlob(async (blob) => {
-                if(!blob) { showToast("Ошибка создания файла"); return; } 
+                if(!blob) return; 
                 const file = new File([blob], "travel-in-lens.ru.jpg", { type: "image/jpeg" });
                 const url = URL.createObjectURL(blob);
                 
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
 
-                // ДЛЯ ПК - Сразу скачиваем
+                // ПК: скачиваем моментально
                 if (!isMobile) {
                     const link = document.createElement('a'); link.download = "travel-in-lens.ru.jpg"; link.href = url;
                     document.body.appendChild(link); link.click(); document.body.removeChild(link);
                     return;
                 }
 
-                // ДЛЯ МОБИЛОК - Пробуем штатный Share
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                     try { await navigator.share({ files: [file] }); return; } catch (err) {}
                 }
                 
-                // ДЛЯ МОБИЛОК - Красивый интерфейс с кнопкой СКАЧАТЬ
+                // Мобильные: интерфейс "Скачать / Закрыть"
                 const overlay = document.createElement('div');
-                overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:20px; padding-top:calc(env(safe-area-inset-top) + 20px); box-sizing:border-box;';
+                overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:20px; box-sizing:border-box;';
                 
-                // Панель кнопок (Закрыть и Скачать)
                 const btnRow = document.createElement('div');
-                btnRow.style.cssText = 'display:flex; gap:10px; margin-bottom:15px; flex-shrink:0; justify-content:center; width:100%; max-width:800px; margin-left:auto; margin-right:auto;';
+                btnRow.style.cssText = 'display:flex; gap:10px; margin-bottom:15px; flex-shrink:0; justify-content:center; width:100%;';
                 
                 const closeBtn = document.createElement('button');
                 closeBtn.innerHTML = "✖ ЗАКРЫТЬ";
@@ -633,41 +587,24 @@ document.addEventListener('DOMContentLoaded', async function() {
                     document.body.appendChild(link); link.click(); document.body.removeChild(link);
                 };
 
-                btnRow.appendChild(closeBtn);
-                btnRow.appendChild(downloadBtn);
+                btnRow.appendChild(closeBtn); btnRow.appendChild(downloadBtn);
                 
-                // Контейнер с картинкой (Скроллится независимо!)
                 const imgContainer = document.createElement('div');
-                imgContainer.style.cssText = 'flex:1; width:100%; overflow-y:auto; display:flex; justify-content:center; align-items:flex-start; margin-bottom:10px;';
-                
-                const img = document.createElement('img');
-                img.src = url;
-                img.style.cssText = 'width:100%; max-width:800px; height:auto; border:1px solid #333; pointer-events:auto; -webkit-touch-callout:default;';
+                imgContainer.style.cssText = 'flex:1; overflow-y:auto; display:flex; justify-content:center; align-items:flex-start;';
+                const img = document.createElement('img'); img.src = url;
+                img.style.cssText = 'width:100%; max-width:800px; height:auto; border:1px solid #333; pointer-events:auto;';
                 
                 imgContainer.appendChild(img);
-                
-                // Подсказка для проблемных айфонов
-                const helpText = document.createElement('div');
-                helpText.innerHTML = "Если кнопка не сработала, зажмите фото пальцем для сохранения";
-                helpText.style.cssText = 'color:#888; font-size:11px; text-align:center; flex-shrink:0; padding-bottom:calc(env(safe-area-inset-bottom) + 10px);';
-
-                overlay.appendChild(btnRow);
-                overlay.appendChild(imgContainer);
-                overlay.appendChild(helpText);
+                overlay.appendChild(btnRow); overlay.appendChild(imgContainer);
                 document.body.appendChild(overlay);
-
             }, 'image/jpeg', 0.85);
 
-        } catch (e) { 
-            console.error(e); showToast("Ошибка сохранения!"); 
-        } finally { 
-            btn.innerHTML = oldIcon; 
-        }
+        } catch (e) { console.error(e); showToast("Ошибка сохранения!"); } 
+        finally { btn.innerHTML = oldIcon; }
     }
+
     async function shareToVKStory() {
         if(!currentUser) { showToast("Авторизуйтесь в PRO!"); document.getElementById('auth-modal').style.display='flex'; return; }
-        
-        await showVKAd(); await new Promise(r => setTimeout(r, 500));
 
         const btn = document.getElementById('btn-share-vk'); if(!btn) return;
         const oldIcon = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -676,32 +613,54 @@ document.addEventListener('DOMContentLoaded', async function() {
             const mapEl = document.getElementById('map');
             const wasMapHidden = !document.body.classList.contains('show-map');
             if (window.innerWidth <= 900 && wasMapHidden) {
-                document.body.classList.add('show-map'); setTimeout(() => map.invalidateSize(), 100); await new Promise(r => setTimeout(r, 1000)); 
-            } else await new Promise(r => setTimeout(r, 500)); 
+                document.body.classList.add('show-map'); setTimeout(() => map.invalidateSize(), 100); await new Promise(r => setTimeout(r, 600)); 
+            }
 
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
-                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); await new Promise(r => setTimeout(r, 1000)); 
+                map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); await new Promise(r => setTimeout(r, 800)); 
             }
 
-            const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 2, backgroundColor: '#ffffff', allowTaint: false, ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') });
+            // ФИКС ТОРМОЗОВ: scale уменьшен с 2 до 1.2
+            const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 1.2, backgroundColor: '#ffffff', allowTaint: false, ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') });
             if (window.innerWidth <= 900 && wasMapHidden) document.body.classList.remove('show-map');
 
             const { body, footer, grandTotal } = getTableData();
             const name = document.getElementById('route-name-inp').value || "Маршрут путешествия";
 
             const storyDiv = document.createElement('div');
-            storyDiv.style.position = 'absolute'; storyDiv.style.left = '-9999px'; storyDiv.style.top = '0'; storyDiv.style.width = '1080px'; storyDiv.style.height = '1920px'; 
-            storyDiv.style.fontFamily = 'system-ui, -apple-system, sans-serif'; storyDiv.style.background = '#121212'; storyDiv.style.color = '#ffffff';
+            storyDiv.style.cssText = 'position:absolute; left:-9999px; top:0; width:1080px; height:1920px; font-family:system-ui, sans-serif; background:#121212; color:#ffffff;';
             
-            const imgData = mapCanvas.toDataURL('image/jpeg', 0.85);
+            const imgData = mapCanvas.toDataURL('image/jpeg', 0.8);
             const expensesRow = footer[3] === '-' && footer[4] === '-' && footer[5] === '-' && footer[6] === '-' && footer[7] === '-' ? '' : `<div style="display: flex; justify-content: space-around; font-size: 32px; font-weight: bold; color: #FF5722; margin-bottom: 50px;">${footer[3] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">⛽</span> ${footer[3]} ₽</div>` : ''}${footer[4] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🏠</span> ${footer[4]} ₽</div>` : ''}${footer[5] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🍔</span> ${footer[5]} ₽</div>` : ''}${footer[6] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎫</span> ${footer[6]} ₽</div>` : ''}${footer[7] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎁</span> ${footer[7]} ₽</div>` : ''}</div>`;
             const waypointRows = body.length === 0 ? '<div style="text-align:center; color:#888; padding: 20px 0;">Маршрут пока пуст</div>' : body.slice(0, 6).map(row => `<div style="display: flex; align-items: center; justify-content: space-between; font-size: 36px; padding: 25px 0; border-bottom: 1px solid #2a2a2a;"><div style="display: flex; align-items: center; max-width: 75%;"><span style="font-size: 28px; color: #FF5722; margin-right: 20px;"><i class="fa-solid fa-location-dot"></i></span><span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${row[0]}</span></div><span style="color: #FF5722; font-weight: 900; font-size: 40px;">${row[8]} ₽</span></div>`).join('');
 
-            storyDiv.innerHTML = `<div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;"><div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">${name}</div><div style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; margin-bottom: 60px;"><span style="font-size: 32px; color: #aaa; margin-right: 15px;">Бюджет</span><span style="font-size: 48px; font-weight: 900; color: #FF5722;">${grandTotal.toLocaleString()} ₽</span></div><div style="width: 100%; height: 600px; background: #1a1a1a url('${imgData}') no-repeat center center; background-size: cover; border-radius: 40px; border: 4px solid #333; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);"></div>${expensesRow}<div style="background: rgba(255, 255, 255, 0.03); border-radius: 30px; padding: 40px 50px; border: 2px solid #333;"><div style="font-size: 28px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px;">Остановки</div>${waypointRows}${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:30px; font-size: 28px; font-style: italic;">и еще ${body.length - 6} точек...</div>` : ''}</div><div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666; padding-top: 50px;">Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span></div></div>`;
-            document.body.appendChild(storyDiv);
+            // ФИКС РАСТЯГИВАНИЯ: Используем overflow:hidden вместо проблемного background-size
+            storyDiv.innerHTML = `
+            <div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;">
+                <div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">${name}</div>
+                <div style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 15px 30px; border-radius: 50px; border: 1px solid #333; margin-bottom: 60px;">
+                    <span style="font-size: 32px; color: #aaa; margin-right: 15px;">Бюджет</span>
+                    <span style="font-size: 48px; font-weight: 900; color: #FF5722;">${grandTotal.toLocaleString()} ₽</span>
+                </div>
+                
+                <div style="width: 100%; height: 600px; border-radius: 40px; border: 4px solid #333; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden; display: flex; justify-content: center; align-items: center; background: #222;">
+                    <img src="${imgData}" style="width: 100%; height: auto; min-height: 100%;">
+                </div>
 
+                ${expensesRow}
+                <div style="background: rgba(255, 255, 255, 0.03); border-radius: 30px; padding: 40px 50px; border: 2px solid #333;">
+                    <div style="font-size: 28px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px;">Остановки</div>
+                    ${waypointRows}
+                    ${body.length > 6 ? `<div style="text-align:center; color:#888; margin-top:30px; font-size: 28px; font-style: italic;">и еще ${body.length - 6} точек...</div>` : ''}
+                </div>
+                <div style="margin-top: auto; text-align: center; font-size: 32px; font-weight: bold; color: #666; padding-top: 50px;">
+                    Спланировано в приложении<br><span style="color:#FF5722">ПУТЕШЕСТВИЕ В ОБЪЕКТИВЕ</span>
+                </div>
+            </div>`;
+            
+            document.body.appendChild(storyDiv);
             const finalCanvas = await html2canvas(storyDiv, { scale: 1, backgroundColor: null, windowWidth: 1080, windowHeight: 1920, useCORS: true, logging: false });
             document.body.removeChild(storyDiv); const base64Img = finalCanvas.toDataURL('image/jpeg', 0.9);
 
@@ -709,11 +668,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             else showToast("Публикация доступна только внутри ВК");
         } catch (e) { 
             console.error("Шеринг отменен или ошибка:", e); 
-            // Показываем тост только если ВК вернул реальную текстовую ошибку
-            if (e && e.error_data && e.error_data.error_reason) {
-                showToast("Ошибка: " + e.error_data.error_reason);
-            }
-        } 
-        finally { btn.innerHTML = oldIcon; }
+            if (e && e.error_data && e.error_data.error_reason) showToast("Ошибка: " + e.error_data.error_reason);
+        } finally { btn.innerHTML = oldIcon; }
     }
 });
