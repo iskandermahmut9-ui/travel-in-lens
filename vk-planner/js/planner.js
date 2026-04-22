@@ -100,18 +100,33 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     try {
-        const container = L.DomUtil.get('map'); if(container != null) container._leaflet_id = null;
-        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([55.75, 37.61], 6);
-        // Пинч для карты, чтобы она не вылезала за края при первой загрузке
-    setTimeout(() => { if (map) map.invalidateSize(); }, 800);
-        map.options.minZoom = 3; // Не даем отдалить карту слишком сильно
-    map.setMaxBounds([
-        [-90, -180],
-        [90, 180]
-    ]);
+        const container = L.DomUtil.get('map'); 
+        if(container != null) container._leaflet_id = null;
+
+        // ИНИЦИАЛИЗАЦИЯ С ФИКСОМ СМЕЩЕНИЯ ЛИНИИ
+        map = L.map('map', {
+            zoomControl: false, 
+            attributionControl: false,
+            preferCanvas: true, // Рисуем на холсте, чтобы html2canvas не смещал SVG-линии
+            zoomAnimation: false, 
+            fadeAnimation: false, 
+            markerZoomAnimation: false 
+        }).setView([55.75, 37.61], 6);
+
+        // Корректное отображение при первой загрузке
+        setTimeout(() => { if (map) map.invalidateSize(); }, 800);
+        
+        map.options.minZoom = 3; 
+        map.setMaxBounds([[-90, -180], [90, 180]]);
+        
         L.control.zoom({position: 'topright'}).addTo(map);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { crossOrigin: 'anonymous' }).addTo(map);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+            crossOrigin: 'anonymous' 
+        }).addTo(map);
+
         map.on('click', async (e) => { await addPoint(e.latlng.lat, e.latlng.lng); });
+
     } catch (e) { console.error("Ошибка карты:", e); }
 
     const SUPABASE_URL = 'https://dytfkjgaurzunloekhxd.supabase.co';
