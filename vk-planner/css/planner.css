@@ -75,12 +75,10 @@ body.vk-light .city-name-input { color: #000 !important; }
     flex: 1; 
     overflow-y: auto; 
     padding: 15px; 
-    padding-bottom: 110px; 
+    padding-bottom: 110px; /* Этот отступ не дает последнему городу залезть под ИТОГО */
     width: 100%; 
     box-sizing: border-box; 
-    
-    /* ДОБАВИТЬ ЭТО, ЧТОБЫ СКРОЛЛБАР НЕ УЕЗЖАЛ ВНИЗ: */
-    max-height: calc(100vh - 350px); /* или подбери высоту под свой дизайн */
+    /* Строка max-height удалена, теперь блок тянется до самого низа! */
 }
 .route-header-block { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .route-header-block h2 { margin: 0 0 15px 0; font-size: 20px; font-weight: 700; }
