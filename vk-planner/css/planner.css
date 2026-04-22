@@ -232,21 +232,12 @@ input[type="number"] {
     overflow-wrap: break-word !important;
     word-break: break-word !important;
 }
-/* ФИКС: Защита списка от наезда скроллбара */
-#list-content {
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 10px; /* Отступ спасает крестики удаления от перекрытия */
+/* Полностью скрываем визуальную полосу прокрутки для списка городов */
+.route-list-scroll {
+    -ms-overflow-style: none;  /* Скрываем для Internet Explorer и старого Edge */
+    scrollbar-width: none;     /* Скрываем для Firefox */
 }
 
-/* Стилизуем скроллбар, чтобы он был тонким и красивым */
-#list-content::-webkit-scrollbar {
-    width: 6px;
-}
-#list-content::-webkit-scrollbar-track {
-    background: transparent;
-}
-#list-content::-webkit-scrollbar-thumb {
-    background-color: #FF5722;
-    border-radius: 10px;
+.route-list-scroll::-webkit-scrollbar {
+    display: none;             /* Скрываем для Chrome, Safari, нового Edge и мобильных браузеров */
 }
