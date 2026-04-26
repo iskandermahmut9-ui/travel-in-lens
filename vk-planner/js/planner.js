@@ -94,8 +94,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function showVKAd() {
         if (window.vkBridge) {
-            try { await vkBridge.send("VKWebAppShowNativeAds", { ad_format: "interstitial" }); } 
-            catch (e) { console.log("Реклама не показана:", e); }
+            try {
+                // 1. Спрашиваем у ВК, есть ли сейчас доступная реклама (чтобы не спамить ошибки)
+                const check = await vkBridge.send("VKWebAppCheckNativeAds", { ad_format: "interstitial" });
+                
+                // 2. Если ВК дал добро - показываем
+                if (check.result) {
+                    await vkBridge.send("VKWebAppShowNativeAds", { ad_format: "interstitial" });
+                } else {
+                    console.log("ВК: Реклама пока недоступна (лимит показов или нет роликов)");
+                }
+            } catch (e) { 
+                console.error("Ошибка рекламы ВК:", e); 
+            }
         }
     }
 
