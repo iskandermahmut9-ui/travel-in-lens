@@ -409,6 +409,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const name = document.getElementById('route-name-inp').value || `Маршрут ${new Date().toLocaleDateString()}`;
         if (!currentUser) return;
         if (waypoints.length === 0) { showToast("Сначала добавьте города!"); return; }
+        
+        // --- ВЫЗОВ РЕКЛАМЫ ПЕРЕД СОХРАНЕНИЕМ ---
+        await showVKAd();
+
         const btn = document.getElementById('btn-save-confirm'); const originalText = btn.innerText;
         btn.innerText = 'СОХРАНЕНИЕ...'; btn.disabled = true; btn.style.opacity = '0.5';
         try {
@@ -424,6 +428,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function saveUpdate() {
         const name = document.getElementById('route-name-inp').value;
         if (waypoints.length === 0) return;
+
+        // --- ВЫЗОВ РЕКЛАМЫ ПЕРЕД ОБНОВЛЕНИЕМ ---
+        await showVKAd();
+
         const btn = document.getElementById('btn-save-update'); const originalText = btn.innerText;
         btn.innerText = 'ОБНОВЛЕНИЕ...'; btn.disabled = true; btn.style.opacity = '0.5';
         try {
@@ -497,6 +505,10 @@ document.addEventListener('DOMContentLoaded', async function() {
   async function saveAsJPG() {
         const btn = document.getElementById('btn-export'); 
         if (!btn) return;
+
+        // --- ВЫЗОВ РЕКЛАМЫ ПЕРЕД СКАЧИВАНИЕМ ---
+        await showVKAd();
+
         const oldIcon = btn.innerHTML; 
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         
@@ -507,17 +519,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (window.innerWidth <= 900 && wasMapHidden) {
                 document.body.classList.add('show-map'); 
                 setTimeout(() => map.invalidateSize(), 100); 
-                await new Promise(r => setTimeout(r, 600)); // Ускорили загрузку окна
+                await new Promise(r => setTimeout(r, 600)); 
             }
 
             if (waypoints.length > 0) {
                 const group = new L.featureGroup(waypoints.map(p => p.marker));
                 if (routeLayer) group.addLayer(routeLayer);
                 map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); 
-                await new Promise(r => setTimeout(r, 800)); // ФИКС ТОРМОЗОВ: Ждем 0.8 сек вместо 2.5!
+                await new Promise(r => setTimeout(r, 800)); 
             }
 
-            // Убрали искусственное завышение качества, чтобы телефоны не висли
             const mapCanvas = await html2canvas(mapEl, { 
                 useCORS: true, scale: window.devicePixelRatio || 1, allowTaint: false, backgroundColor: '#ffffff', 
                 ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') 
@@ -567,7 +578,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
 
-                // ПК: скачиваем моментально
                 if (!isMobile) {
                     const link = document.createElement('a'); link.download = "travel-in-lens.ru.jpg"; link.href = url;
                     document.body.appendChild(link); link.click(); document.body.removeChild(link);
@@ -578,7 +588,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                     try { await navigator.share({ files: [file] }); return; } catch (err) {}
                 }
                 
-                // Мобильные: интерфейс "Скачать / Закрыть"
                 const overlay = document.createElement('div');
                 overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:20px; box-sizing:border-box;';
                 
@@ -617,6 +626,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function shareToVKStory() {
         if(!currentUser) { showToast("Авторизуйтесь в PRO!"); document.getElementById('auth-modal').style.display='flex'; return; }
 
+        // --- ВЫЗОВ РЕКЛАМЫ ПЕРЕД ИСТОРИЕЙ ---
+        await showVKAd();
+
         const btn = document.getElementById('btn-share-vk'); if(!btn) return;
         const oldIcon = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
@@ -633,7 +645,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 map.fitBounds(group.getBounds(), { padding: [30, 30], animate: false }); await new Promise(r => setTimeout(r, 800)); 
             }
 
-            // ФИКС ТОРМОЗОВ: scale уменьшен с 2 до 1.2
             const mapCanvas = await html2canvas(mapEl, { useCORS: true, scale: 1.2, backgroundColor: '#ffffff', allowTaint: false, ignoreElements: (el) => el.classList.contains('leaflet-control-zoom') });
             if (window.innerWidth <= 900 && wasMapHidden) document.body.classList.remove('show-map');
 
@@ -647,7 +658,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             const expensesRow = footer[3] === '-' && footer[4] === '-' && footer[5] === '-' && footer[6] === '-' && footer[7] === '-' ? '' : `<div style="display: flex; justify-content: space-around; font-size: 32px; font-weight: bold; color: #FF5722; margin-bottom: 50px;">${footer[3] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">⛽</span> ${footer[3]} ₽</div>` : ''}${footer[4] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🏠</span> ${footer[4]} ₽</div>` : ''}${footer[5] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🍔</span> ${footer[5]} ₽</div>` : ''}${footer[6] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎫</span> ${footer[6]} ₽</div>` : ''}${footer[7] !== '-' ? `<div><span style="color:#888; font-size: 38px; margin-right:8px;">🎁</span> ${footer[7]} ₽</div>` : ''}</div>`;
             const waypointRows = body.length === 0 ? '<div style="text-align:center; color:#888; padding: 20px 0;">Маршрут пока пуст</div>' : body.slice(0, 6).map(row => `<div style="display: flex; align-items: center; justify-content: space-between; font-size: 36px; padding: 25px 0; border-bottom: 1px solid #2a2a2a;"><div style="display: flex; align-items: center; max-width: 75%;"><span style="font-size: 28px; color: #FF5722; margin-right: 20px;"><i class="fa-solid fa-location-dot"></i></span><span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${row[0]}</span></div><span style="color: #FF5722; font-weight: 900; font-size: 40px;">${row[8]} ₽</span></div>`).join('');
 
-            // ФИКС РАСТЯГИВАНИЯ: Используем overflow:hidden вместо проблемного background-size
             storyDiv.innerHTML = `
             <div style="padding: 100px 70px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: start; text-align: left;">
                 <div style="font-size: 60px; font-weight: 900; line-height: 1.1; text-transform: uppercase; margin-bottom: 30px;">${name}</div>
